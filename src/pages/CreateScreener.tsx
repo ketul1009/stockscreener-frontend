@@ -3,8 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
-import { PlusIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 
 const stockUniverse = [
     {
@@ -71,19 +71,13 @@ const ruleValues = [
     
 ]
 
-const defaultRule = {
-    type: "filter",
-    technicalIndicator: "",
-    comparisonType: "",
-    comparisonValue: ""
-}
 
 export default function CreateScreener() {
 
     const [screenerName, setScreenerName] = useState("");
     const [selectedStockUniverse, setSelectedStockUniverse] = useState("");
     const [andOr, setAndOr] = useState("");
-    const [screenerRules, setScreenerRules] = useState<any[]>([defaultRule]);
+    const [screenerRules, setScreenerRules] = useState<any[]>([]);
 
     const conditionButtonValidation = () => {
         if (screenerRules.length > 0) {
@@ -104,19 +98,68 @@ export default function CreateScreener() {
             return;
         }
         if (condition === "AND") {
-            setScreenerRules([
-                ...screenerRules, {type: "condition", condition: "AND"},
-                {type: "filter", technicalIndicator: "", comparisonType: "", comparisonValue: ""}
-            ]);
+            let currentScreenerRules = [...screenerRules];
+            currentScreenerRules.push({type: "condition", condition: "AND"});
+            setScreenerRules(currentScreenerRules);
             console.log("Added rule");
         } else {
-            setScreenerRules([
-                ...screenerRules, {type: "condition", condition: "OR"},
-                {type: "filter", technicalIndicator: "", comparisonType: "", comparisonValue: ""}
-            ]);
+            let currentScreenerRules = [...screenerRules];
+            currentScreenerRules.push({type: "condition", condition: "OR"});
+            setScreenerRules(currentScreenerRules);
             console.log("Added rule");
         }
     }
+
+    const handleAddRuleClick = () => {
+        let currentScreenerRules = [...screenerRules];
+        currentScreenerRules.push({type: "filter", technicalIndicator: "", comparisonType: "", comparisonValue: ""});
+        setScreenerRules(currentScreenerRules);
+    }
+
+    const handleRuleRowRender = (rule: any, index: number, onRemove: () => void) => {
+        if (rule.type === "condition") {
+            return <div>{rule.condition}</div>
+        } else {
+            return <FilterRow rule={rule} onChange={(value) => {
+                let currentScreenerRules = [...screenerRules];
+                currentScreenerRules[index] = value;
+                setScreenerRules(currentScreenerRules);
+            }} onRemove={onRemove} />
+        }
+    }
+
+    const handleSaveScreenerClick = () => {
+        if (validateScreenerRules()) {
+            console.log(screenerRules);
+        } else {
+            alert("Please add at least one rule and make sure the last rule is a filter");
+        }
+    }
+
+    const validateScreenerRules = () => {
+        if (screenerRules.length === 0) {
+            return false;
+        }
+        return screenerRules.every((rule) => {
+            if (rule.type === "condition") {
+                return rule.condition === "AND" || rule.condition === "OR";
+            } else {
+                return rule.technicalIndicator && rule.comparisonType && rule.comparisonValue;
+            }
+        }) && screenerRules[screenerRules.length - 1].type === "filter";
+    }
+
+    const handleRemoveRuleClick = (index: number) => {
+        let currentScreenerRules = [...screenerRules];
+        console.log("before removing rule at index: ", currentScreenerRules);
+        currentScreenerRules.splice(index, 1);
+        console.log("after removing rule at index: ", currentScreenerRules);
+        setScreenerRules(currentScreenerRules);
+    }
+
+    useEffect(() => {
+        console.log("screenerRules: ", screenerRules);
+    }, [screenerRules]);
 
     return (
         <div>
@@ -149,26 +192,16 @@ export default function CreateScreener() {
                             <Label className="w-full">Stock Universe</Label>
                             <Input placeholder="Stock Universe" />
                         </div>
-                        {FilterRow({ rule: screenerRules[0], onChange: (value: object) => {
-                            let newRule = {...value, type: "filter"};
-                            const screenerRule = [newRule];
-                            setScreenerRules(screenerRule);
-                        }})}
-                        {screenerRules.slice(1).map((rule, index) => (
-                            rule.type === "condition" ? <div>{rule.condition}</div> : <FilterRow rule={rule} onChange={(value: object) => {
-                                let newRule = {...value, type: "filter"};
-                                const screenerRule = [...screenerRules];
-                                screenerRule[index] = newRule;
-                                setScreenerRules(screenerRule);
-                            }} />
+                        {screenerRules.map((rule, index) => (
+                            handleRuleRowRender(rule, index, () => handleRemoveRuleClick(index))
                         ))}
                         <div className="flex flex-row justify-center items-center w-72 gap-4">
-                            <Button variant="outline">Add Rule</Button>
+                            <Button variant="outline" onClick={handleAddRuleClick}>Add Rule</Button>
                             <Button variant="outline" className={`${conditionButtonClassName()} text-xs`} onClick={() => handleConditionClick("AND")}>AND</Button>
                             <Button variant="outline" className={`${conditionButtonClassName()} text-xs`} onClick={() => handleConditionClick("OR")}>OR</Button>
                         </div>
                         <div className="flex flex-row justify-center items-center w-72 gap-4 mt-5">
-                            <Button variant="outline">Save Screener</Button>
+                            <Button variant="outline" onClick={handleSaveScreenerClick}>Save Screener</Button>
                         </div>
                     </div>
                 </div>
@@ -182,7 +215,7 @@ export default function CreateScreener() {
     )
 }
 
-const FilterRow = ({ rule, onChange }: { rule: any, onChange: (value: object) => void }) => {
+const FilterRow = ({ rule, onChange, onRemove }: { rule: any, onChange: (value: object) => void, onRemove: () => void }) => {
     const [currentRule, setCurrentRule] = useState<any>(rule);
 
     return (
@@ -237,6 +270,7 @@ const FilterRow = ({ rule, onChange }: { rule: any, onChange: (value: object) =>
                     </div>
                 </div>
                 }
+                <Button variant="outline" onClick={onRemove}><Trash2Icon /></Button>
             </div>
         </div>
     )
