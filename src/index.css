@@ -118,3 +118,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+.table-outline {
+  @apply border border-gray-300 rounded-lg p-4 my-10;
+}
+
+.table-header {
+  @apply text-gray-500 font-semibold;
+}
