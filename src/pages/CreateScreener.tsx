@@ -101,12 +101,10 @@ export default function CreateScreener() {
             let currentScreenerRules = [...screenerRules];
             currentScreenerRules.push({type: "condition", condition: "AND"});
             setScreenerRules(currentScreenerRules);
-            console.log("Added rule");
         } else {
             let currentScreenerRules = [...screenerRules];
             currentScreenerRules.push({type: "condition", condition: "OR"});
             setScreenerRules(currentScreenerRules);
-            console.log("Added rule");
         }
     }
 
@@ -118,8 +116,12 @@ export default function CreateScreener() {
 
     const handleRuleRowRender = (rule: any, index: number, onRemove: () => void) => {
         if (rule.type === "condition") {
-            return <div>{rule.condition}</div>
+            return <div className="flex flex-row justify-center items-center gap-4">
+                {rule.condition}
+                <Button variant="outline" className="bg-transparent hover:bg-transparent border-none shadow-none" onClick={onRemove}><Trash2Icon /></Button>
+            </div>
         } else {
+            console.log("rule: ", rule);
             return <FilterRow rule={rule} onChange={(value) => {
                 let currentScreenerRules = [...screenerRules];
                 currentScreenerRules[index] = value;
@@ -150,10 +152,8 @@ export default function CreateScreener() {
     }
 
     const handleRemoveRuleClick = (index: number) => {
-        let currentScreenerRules = [...screenerRules];
-        console.log("before removing rule at index: ", currentScreenerRules);
+        let currentScreenerRules = JSON.parse(JSON.stringify(screenerRules));
         currentScreenerRules.splice(index, 1);
-        console.log("after removing rule at index: ", currentScreenerRules);
         setScreenerRules(currentScreenerRules);
     }
 
@@ -218,13 +218,19 @@ export default function CreateScreener() {
 const FilterRow = ({ rule, onChange, onRemove }: { rule: any, onChange: (value: object) => void, onRemove: () => void }) => {
     const [currentRule, setCurrentRule] = useState<any>(rule);
 
+    useEffect(() => {
+        setCurrentRule(JSON.parse(JSON.stringify(rule)));
+    }, [JSON.stringify(rule)]);
+
     return (
         <div className="flex flex-row justify-center items-center">
             <div className="flex flex-row gap-4 justify-center items-center">
                 <Select onValueChange={(value) => {
                     setCurrentRule({...currentRule, technicalIndicator: value});
                     onChange({...currentRule, technicalIndicator: value});
-                }}>
+                }}
+                defaultValue={currentRule.technicalIndicator}
+                >
                     <SelectTrigger className="">
                         <SelectValue placeholder="" />
                     </SelectTrigger>
@@ -237,9 +243,11 @@ const FilterRow = ({ rule, onChange, onRemove }: { rule: any, onChange: (value: 
                 {currentRule.technicalIndicator &&
                 <div className="flex flex-row gap-4 justify-center items-center">
                     <Select onValueChange={(value) => {
-                        setCurrentRule({...currentRule, comparisonType: value});
-                        onChange({...currentRule, comparisonType: value});
-                    }}>
+                        setCurrentRule({...currentRule, condition: value});
+                        onChange({...currentRule, condition: value});
+                    }}
+                    defaultValue={currentRule.condition}
+                    >
                         <SelectTrigger className="">
                             <SelectValue placeholder="" />
                         </SelectTrigger>
@@ -251,9 +259,11 @@ const FilterRow = ({ rule, onChange, onRemove }: { rule: any, onChange: (value: 
                     </Select>
                     <div className="flex flex-row">
                         <Select onValueChange={(value) => {
-                            setCurrentRule({...currentRule, comparisonType: value});
-                            onChange({...currentRule, comparisonType: value});
-                        }}>
+                            setCurrentRule({...currentRule, comparisonType: value, comparisonValue: ""});
+                            onChange({...currentRule, comparisonType: value, comparisonValue: ""});
+                        }}
+                        defaultValue={currentRule.comparisonType}
+                        >
                             <SelectTrigger className="">
                                 <SelectValue placeholder="" />
                             </SelectTrigger>
@@ -263,30 +273,30 @@ const FilterRow = ({ rule, onChange, onRemove }: { rule: any, onChange: (value: 
                                 ))}
                             </SelectContent>
                         </Select>
-                        {<ComparisonInput comparisonType={currentRule.comparisonType} onChange={(value) => {
+                        {<ComparisonInput comparisonType={currentRule.comparisonType} comparisonValue={currentRule.comparisonValue} onChange={(value) => {
                             setCurrentRule({...currentRule, comparisonValue: value});
                             onChange({...currentRule, comparisonValue: value});
                         }} />}
                     </div>
                 </div>
                 }
-                <Button variant="outline" onClick={onRemove}><Trash2Icon /></Button>
+                <Button variant="outline" className="bg-transparent hover:bg-transparent border-none shadow-none" onClick={onRemove}><Trash2Icon /></Button>
             </div>
         </div>
     )
 }
 
-const ComparisonInput = ({ comparisonType, onChange }: { comparisonType: string, onChange: (value: string) => void }) => {
+const ComparisonInput = ({ comparisonType, comparisonValue, onChange }: { comparisonType: string, comparisonValue: string, onChange: (value: string) => void }) => {
 
     switch (comparisonType) {
         case "number":
-            return <Input placeholder="Rule Value" className="w-24" onChange={(e) => onChange(e.target.value)} />
+            return <Input placeholder="Rule Value" className="w-24" value={comparisonValue} onChange={(e) => onChange(e.target.value)} />
         case "percentage":
-            return <Input placeholder="Rule Value" className="w-24" onChange={(e) => onChange(e.target.value)} />
+            return <Input placeholder="Rule Value" className="w-24" value={comparisonValue} onChange={(e) => onChange(e.target.value)} />
         case "indicator":
             return (
                 <div>
-                    <Select onValueChange={(value) => onChange(value)}>
+                    <Select onValueChange={(value) => onChange(value)} defaultValue={comparisonValue}>
                         <SelectTrigger className="">
                             <SelectValue placeholder="" />
                         </SelectTrigger>
