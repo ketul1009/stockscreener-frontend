@@ -121,7 +121,6 @@ export default function CreateScreener() {
                 <Button variant="outline" className="bg-transparent hover:bg-transparent border-none shadow-none" onClick={onRemove}><Trash2Icon /></Button>
             </div>
         } else {
-            console.log("rule: ", rule);
             return <FilterRow rule={rule} onChange={(value) => {
                 let currentScreenerRules = [...screenerRules];
                 currentScreenerRules[index] = value;
@@ -142,13 +141,20 @@ export default function CreateScreener() {
         if (screenerRules.length === 0) {
             return false;
         }
-        return screenerRules.every((rule) => {
+        let isValid = screenerRules.every((rule) => {
             if (rule.type === "condition") {
                 return rule.condition === "AND" || rule.condition === "OR";
             } else {
                 return rule.technicalIndicator && rule.comparisonType && rule.comparisonValue;
             }
         }) && screenerRules[screenerRules.length - 1].type === "filter";
+
+        for (let i = 0; i < screenerRules.length - 1; i+=2) {
+            if (!(screenerRules[i].type === "filter") || !(screenerRules[i + 1].type === "condition")) {
+                return false;
+            }
+        }
+        return isValid;
     }
 
     const handleRemoveRuleClick = (index: number) => {
@@ -156,10 +162,6 @@ export default function CreateScreener() {
         currentScreenerRules.splice(index, 1);
         setScreenerRules(currentScreenerRules);
     }
-
-    useEffect(() => {
-        console.log("screenerRules: ", screenerRules);
-    }, [screenerRules]);
 
     return (
         <div>
@@ -196,9 +198,9 @@ export default function CreateScreener() {
                             handleRuleRowRender(rule, index, () => handleRemoveRuleClick(index))
                         ))}
                         <div className="flex flex-row justify-center items-center w-72 gap-4">
-                            <Button variant="outline" onClick={handleAddRuleClick}>Add Rule</Button>
-                            <Button variant="outline" className={`${conditionButtonClassName()} text-xs`} onClick={() => handleConditionClick("AND")}>AND</Button>
-                            <Button variant="outline" className={`${conditionButtonClassName()} text-xs`} onClick={() => handleConditionClick("OR")}>OR</Button>
+                            <Button variant="outline" disabled={conditionButtonValidation()} onClick={handleAddRuleClick}>Add Rule</Button>
+                            <Button variant="outline" className="text-xs" disabled={!conditionButtonValidation()} onClick={() => handleConditionClick("AND")}>AND</Button>
+                            <Button variant="outline" className="text-xs" disabled={!conditionButtonValidation()} onClick={() => handleConditionClick("OR")}>OR</Button>
                         </div>
                         <div className="flex flex-row justify-center items-center w-72 gap-4 mt-5">
                             <Button variant="outline" onClick={handleSaveScreenerClick}>Save Screener</Button>
