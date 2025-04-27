@@ -5,6 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { PlusIcon, Trash2Icon } from "lucide-react";
+import {Table, TableBody, TableCell, TableHead } from "@/components/ui/table";
+import { TableRow } from "@/components/ui/table";
+import { TableHeader } from "@/components/ui/table";
 
 const stockUniverse = [
     {
@@ -76,7 +79,6 @@ export default function CreateScreener() {
 
     const [screenerName, setScreenerName] = useState("");
     const [selectedStockUniverse, setSelectedStockUniverse] = useState("");
-    const [andOr, setAndOr] = useState("");
     const [screenerRules, setScreenerRules] = useState<any[]>([]);
 
     const conditionButtonValidation = () => {
@@ -131,7 +133,7 @@ export default function CreateScreener() {
 
     const handleSaveScreenerClick = () => {
         if (validateScreenerRules()) {
-            console.log(screenerRules);
+            console.log(screenerRules, screenerName, selectedStockUniverse);
         } else {
             alert("Please add at least one rule and make sure the last rule is a filter");
         }
@@ -166,19 +168,19 @@ export default function CreateScreener() {
     return (
         <div>
             <NavigationBar />
-            <div className="flex flex-col justify-center items-center">
-                <div className="flex flex-col justify-center items-center mt-10 mb-10 w-full">
+            <div className="flex flex-row justify-center items-start">
+                <div className="flex flex-col justify-center items-center mt-10 mb-10 w-1/3 ">
                     <h1 className="text-2xl font-bold">Create Screener</h1>
-                    <div className="flex flex-col justify-center items-center bg-gray-100 p-10 rounded-lg gap-4 w-full">
-                        <div className="flex flex-row justify-center items-center w-72">
+                    <div className="flex flex-col justify-center items-center p-10 rounded-lg gap-4 w-full">
+                        <div className="flex flex-row justify-between items-center w-72">
                             <Label className="w-full">Screener Name</Label>
-                            <Input placeholder="Screener Name" maxLength={20} />
+                            <Input placeholder="Screener Name" maxLength={20} onChange={(e) => setScreenerName(e.target.value)}/>
                         </div>
-                        <div className="flex flex-row justify-center items-center w-72">
+                        <div className="flex flex-row justify-between items-center w-72">
                             <Label className="w-full">Stock Universe</Label>
-                            <div className="w-full">
-                                <Select>
-                                    <SelectTrigger className="w-[100px]">
+                            <div className="w-auto">
+                                <Select onValueChange={(value) => setSelectedStockUniverse(value)} defaultValue={selectedStockUniverse}>
+                                    <SelectTrigger className="w-fit">
                                         <SelectValue placeholder="" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -186,13 +188,8 @@ export default function CreateScreener() {
                                         <SelectItem value={stock.value}>{stock.label}</SelectItem>
                                         ))}
                                     </SelectContent>
-                                    
                                 </Select>
                             </div>
-                        </div>
-                        <div className="flex flex-row justify-center items-center w-72">
-                            <Label className="w-full">Stock Universe</Label>
-                            <Input placeholder="Stock Universe" />
                         </div>
                         {screenerRules.map((rule, index) => (
                             handleRuleRowRender(rule, index, () => handleRemoveRuleClick(index))
@@ -207,10 +204,11 @@ export default function CreateScreener() {
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-col justify-center items-center mt-10 mb-10">
+                <div className="flex flex-col justify-center items-center mt-10 mb-10 w-1/3 ">
                     <div className="flex flex-col justify-center items-center">
                         <h1 className="text-2xl font-bold">Results</h1>
                     </div>
+                    <ResultsTable results={results} />
                 </div>
             </div>
         </div>
@@ -313,4 +311,48 @@ const ComparisonInput = ({ comparisonType, comparisonValue, onChange }: { compar
         default:
             return null;
     }
+}
+
+const results = [
+    {
+        name: "TCS",
+        price: 100,
+        change: 10
+    },
+    {
+        name: "TCS",
+        price: 100,
+        change: 10
+    },
+    {
+        name: "TCS",
+        price: 100,
+        change: 10
+    },
+    
+]
+
+const ResultsTable = ({ results }: { results: any[] }) => {
+    return (
+        <div className="border border-gray-300 rounded-lg p-4 my-10">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="text-center w-32">Name</TableHead>
+                        <TableHead className="text-center w-32">Price</TableHead>
+                        <TableHead className="text-center w-32">Change</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {results.map((result) => (
+                        <TableRow key={result.name}>
+                            <TableCell className="text-center w-32">{result.name}</TableCell>
+                            <TableCell className="text-center w-32">{result.price}</TableCell>
+                            <TableCell className="text-center w-32">{result.change}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </div>
+    )
 }
