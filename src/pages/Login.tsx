@@ -1,14 +1,23 @@
 import { LoginForm } from "@/components/login-form"
 import { useNavigate } from "react-router-dom"
 import { useState } from "react"
+import { API_URL } from "@/constants/constants"
 
 export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   
-  const handleLogin = () => {
-    console.log(email, password)
+  const handleLogin = async () => {
+    console.log(JSON.stringify({ email, password}))
+    const response = await fetch(`${API_URL}/login`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    })
+    console.log(response)
   }
   
   return (
