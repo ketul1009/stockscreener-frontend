@@ -1,6 +1,7 @@
 import { SignupForm } from "@/components/signup-form"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { API_URL } from "@/constants/constants"
 export default function Signup() {
     const navigate = useNavigate()
     const [username, setUsername] = useState("")
@@ -8,8 +9,15 @@ export default function Signup() {
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
 
-    const handleSignup = () => {
-        console.log(username, email, password, confirmPassword)
+    const handleSignup = async () => {
+        const response = await fetch(`${API_URL}/register`, {
+            method: "POST",
+            body: JSON.stringify({ username, email, password, confirmPassword }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+        console.log(response)
     }
     return (
         <SignupForm 
