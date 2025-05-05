@@ -3,31 +3,40 @@ import { useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { API_URL } from "@/constants/constants"
 import { useAuth } from "@/hooks/useAuth"
+import { useApp } from "@/contexts/AppContext"
+import axios from "axios"
+
 export default function Login() {
   const navigate = useNavigate()
   const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const context = useApp()
+
+  const validateLogin = () => {
+    if (!email || !password) {
+      context.showToast("Please enter email and password", "error")
+      return false
+    }
+    return true
+  }
   
   const handleLogin = async () => {
+    if (!validateLogin()) return
     try {
-      const response = await fetch(`${API_URL}/login`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({ email, password }),
+      const response = await axios.post(`${API_URL}/login`, {
+        email,
+        password
+      }).then(res => {
+        const data = res.data
+        login({ id: data.user.id, email: data.user.email, username: data.user.username }, data.token)
+        navigate('/dashboard')
+      }).catch(err => {
+        context.showToast(`Login failed: ${err.response.data.error}`, "error")
       })
-
-      if (!response.ok) {
-        throw new Error('Login failed')
-      }
-
-      const data = await response.json()
-      login({ id: data.userId, email }, data.token)
-      navigate('/dashboard')
     } catch (error) {
       console.error('Login error:', error)
+      context.showToast("Login failed", "error")
     }
   }
   
