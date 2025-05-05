@@ -3,6 +3,7 @@ import { create } from 'zustand'
 interface User {
     id: string
     email: string
+    username: string
 }
 
 interface AuthState {
@@ -15,10 +16,18 @@ interface AuthState {
 
 type SetState = (fn: (state: AuthState) => Partial<AuthState>) => void
 
+// Initialize state from localStorage if token exists
+const initializeState = (): Pick<AuthState, 'isAuthenticated' | 'token'> => {
+    const token = localStorage.getItem('token')
+    return {
+        isAuthenticated: !!token,
+        token: token
+    }
+}
+
 export const useAuth = create<AuthState>((set: SetState) => ({
-    isAuthenticated: false,
+    ...initializeState(),
     user: null,
-    token: null,
     login: (user: User, token: string) => {
         localStorage.setItem('token', token)
         set((state) => ({ ...state, isAuthenticated: true, user, token }))
