@@ -8,7 +8,8 @@ interface User {
 interface AuthState {
     isAuthenticated: boolean
     user: User | null
-    login: (user: User) => void
+    token: string | null
+    login: (user: User, token: string) => void
     logout: () => void
 }
 
@@ -17,6 +18,13 @@ type SetState = (fn: (state: AuthState) => Partial<AuthState>) => void
 export const useAuth = create<AuthState>((set: SetState) => ({
     isAuthenticated: false,
     user: null,
-    login: (user: User) => set((state) => ({ ...state, isAuthenticated: true, user })),
-    logout: () => set((state) => ({ ...state, isAuthenticated: false, user: null })),
+    token: null,
+    login: (user: User, token: string) => {
+        localStorage.setItem('token', token)
+        set((state) => ({ ...state, isAuthenticated: true, user, token }))
+    },
+    logout: () => {
+        localStorage.removeItem('token')
+        set((state) => ({ ...state, isAuthenticated: false, user: null, token: null }))
+    },
 })) 
