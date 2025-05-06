@@ -1,13 +1,12 @@
 import { NavigationBar } from "@/components/NavigationBar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import SuggestedCard from "@/components/ui/SuggestedCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowRight, Pencil, Plus, Trash } from "lucide-react";
+import { Pencil, Plus, Trash } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
-
+import { useNavigate } from "react-router-dom";
 
 const screener = [
     {
@@ -61,7 +60,7 @@ export default function Screener() {
 
     const { userData } = useApp();
     const [screeners, setScreeners] = useState<any[]>([]);
-
+    const navigate = useNavigate();
     const fetchScreeners = async () => {
         await axiosInstance.get('/screeners', {
             params: {
@@ -146,7 +145,9 @@ export default function Screener() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="flex flex-row gap-2">
-                                            <Button variant="outline">
+                                            <Button variant="outline" onClick={() => {
+                                                navigate(`/edit-screener/${screener.id}`);
+                                            }}>
                                                 <Pencil />
                                             </Button>
                                             <Button variant="outline">
