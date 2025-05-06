@@ -8,7 +8,7 @@ import CreateScreener from "@/pages/CreateScreener"
 import Watchlist from "@/pages/Watchlist"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { AppProvider } from "@/contexts/AppContext"
-
+import { Screener as ScreenerType } from "@/types/screener"
 function App() {
   return (
     <AppProvider>
@@ -42,6 +42,14 @@ function App() {
           />
           <Route 
             path="/create-screener" 
+            element={
+              <ProtectedRoute>
+                <CreateScreener />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/edit-screener/:id" 
             element={
               <ProtectedRoute>
                 <CreateScreener />

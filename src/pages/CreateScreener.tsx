@@ -5,82 +5,34 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { Trash2Icon } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { useApp } from "@/contexts/AppContext";
 import axiosInstance from "@/lib/axios";
-const stockUniverse = [
-    {
-        value: "all",
-        label: "All"
-    },
-    {
-        value: "nifty50",
-        label: "Nifty 50"
-    },
-    {
-        value: "nifty100",
-        label: "Nifty 100"
-    },
-    {
-        value: "sensex30",
-        label: "SENSEX 30"
-    }
-]
-
-const technicalIndicators = [
-    {
-        value: "rsi",
-        label: "RSI"
-    },
-    {
-        value: "macd",
-        label: "MACD"
-    },
-    {
-        value: "bollinger_bands",
-        label: "Bollinger Bands"
-    }
-]
-
-const ruleConditions = [
-    {
-        value: "greater_than",
-        label: "Greater Than"
-    },
-    {
-        value: "less_than",
-        label: "Less Than"
-    },
-    {
-        value: "equal_to",
-        label: "Equal To"
-    }
-]
-
-const ruleValues = [
-    {
-        value: "number",
-        label: "Number"
-    },
-    {
-        value: "percentage",
-        label: "Percentage"
-    },
-    {
-        value: "indicator",
-        label: "Indicator"
-    }
-    
-]
-
+import { STOCK_UNIVERSE, RULE_CONDITIONS, RULE_VALUES, TECHNICAL_INDICATORS } from "@/constants/constants";
+import { useParams } from "react-router-dom";
 
 export default function CreateScreener() {
-    const { user } = useAuth();
+    const { id } = useParams();
     const context = useApp();
     const [screenerName, setScreenerName] = useState("");
     const [selectedStockUniverse, setSelectedStockUniverse] = useState("");
-    const [andOr, setAndOr] = useState("");
     const [screenerRules, setScreenerRules] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (id) {
+            axiosInstance.get(`/screeners`, {
+                params: {
+                    id: id
+                }
+            }).then((res) => {
+                const screenerData = res.data;
+                setScreenerName(screenerData.name);
+                setSelectedStockUniverse(screenerData.stock_universe);
+                setScreenerRules(screenerData.rules);
+            }).catch((err) => {
+                context.showToast(`Failed to fetch screener: ${err.response?.data?.error || 'Unknown error'}`, "error");
+            });
+        }
+    }, [id]);
 
     const conditionButtonValidation = () => {
         if (screenerRules.length > 0) {
@@ -197,12 +149,12 @@ export default function CreateScreener() {
                         <div className="flex flex-row justify-center items-center w-72">
                             <Label className="w-full">Stock Universe</Label>
                             <div className="w-full">
-                                <Select onValueChange={(value) => setSelectedStockUniverse(value)}>
+                                <Select value={selectedStockUniverse} onValueChange={(value) => setSelectedStockUniverse(value)}>
                                     <SelectTrigger className="w-[100px]">
                                         <SelectValue placeholder="" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {stockUniverse.map((stock) => (
+                                        {STOCK_UNIVERSE.map((stock) => (
                                         <SelectItem value={stock.value}>{stock.label}</SelectItem>
                                         ))}
                                     </SelectContent>
@@ -253,7 +205,7 @@ const FilterRow = ({ rule, onChange, onRemove }: { rule: any, onChange: (value: 
                         <SelectValue placeholder="" />
                     </SelectTrigger>
                     <SelectContent>
-                        {technicalIndicators.map((technicalIndicator) => (
+                        {TECHNICAL_INDICATORS.map((technicalIndicator) => (
                             <SelectItem value={technicalIndicator.value}>{technicalIndicator.label}</SelectItem>
                         ))}
                     </SelectContent>
@@ -270,7 +222,7 @@ const FilterRow = ({ rule, onChange, onRemove }: { rule: any, onChange: (value: 
                             <SelectValue placeholder="" />
                         </SelectTrigger>
                         <SelectContent>
-                            {ruleConditions.map((ruleCondition) => (
+                            {RULE_CONDITIONS.map((ruleCondition) => (
                                 <SelectItem value={ruleCondition.value}>{ruleCondition.label}</SelectItem>
                             ))}
                         </SelectContent>
@@ -286,7 +238,7 @@ const FilterRow = ({ rule, onChange, onRemove }: { rule: any, onChange: (value: 
                                 <SelectValue placeholder="" />
                             </SelectTrigger>
                             <SelectContent>
-                                {ruleValues.map((ruleValue) => (
+                                {RULE_VALUES.map((ruleValue) => (
                                     <SelectItem value={ruleValue.value}>{ruleValue.label}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -319,7 +271,7 @@ const ComparisonInput = ({ comparisonType, comparisonValue, onChange }: { compar
                             <SelectValue placeholder="" />
                         </SelectTrigger>
                         <SelectContent>
-                            {technicalIndicators.map((technicalIndicator) => (
+                            {TECHNICAL_INDICATORS.map((technicalIndicator) => (
                                 <SelectItem value={technicalIndicator.value}>{technicalIndicator.label}</SelectItem>
                             ))}
                         </SelectContent>
