@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { PlusIcon, Trash2Icon } from "lucide-react";
-
+import { Trash2Icon } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useApp } from "@/contexts/AppContext";
+import axiosInstance from "@/lib/axios";
 const stockUniverse = [
     {
         value: "all",
@@ -73,7 +75,8 @@ const ruleValues = [
 
 
 export default function CreateScreener() {
-
+    const { user } = useAuth();
+    const context = useApp();
     const [screenerName, setScreenerName] = useState("");
     const [selectedStockUniverse, setSelectedStockUniverse] = useState("");
     const [andOr, setAndOr] = useState("");
@@ -121,7 +124,6 @@ export default function CreateScreener() {
                 <Button variant="outline" className="bg-transparent hover:bg-transparent border-none shadow-none" onClick={onRemove}><Trash2Icon /></Button>
             </div>
         } else {
-            console.log("rule: ", rule);
             return <FilterRow rule={rule} onChange={(value) => {
                 let currentScreenerRules = [...screenerRules];
                 currentScreenerRules[index] = value;
@@ -130,11 +132,29 @@ export default function CreateScreener() {
         }
     }
 
+    const saveScreener = async () => {
+        const screener = {
+            username: context.userData.username,
+            name: screenerName,
+            stockUniverse: selectedStockUniverse,
+            rules: screenerRules
+        }
+        await axiosInstance.post('/screeners', screener).then((res) => {
+            if (res.status === 201) {
+                context.showToast("Screener saved successfully", "success");
+            } else {
+                context.showToast("Failed to save screener", "error");
+            }
+        }).catch((err) => {
+            context.showToast(`Failed to save screener: ${err.response.data.error}`, "error");
+        });
+    }
+
     const handleSaveScreenerClick = () => {
         if (validateScreenerRules()) {
-            console.log(screenerRules);
+            saveScreener();
         } else {
-            alert("Please add at least one rule and make sure the last rule is a filter");
+            context.showToast("Please add at least one rule and make sure the last rule is a filter", "error");
         }
     }
 
@@ -157,9 +177,6 @@ export default function CreateScreener() {
         setScreenerRules(currentScreenerRules);
     }
 
-    useEffect(() => {
-        console.log("screenerRules: ", screenerRules);
-    }, [screenerRules]);
 
     return (
         <div>
@@ -170,12 +187,17 @@ export default function CreateScreener() {
                     <div className="flex flex-col justify-center items-center bg-gray-100 p-10 rounded-lg gap-4 w-full">
                         <div className="flex flex-row justify-center items-center w-72">
                             <Label className="w-full">Screener Name</Label>
-                            <Input placeholder="Screener Name" maxLength={20} />
+                            <Input
+                                placeholder="Screener Name"
+                                maxLength={20}
+                                value={screenerName}
+                                onChange={(e) => setScreenerName(e.target.value)}
+                            />
                         </div>
                         <div className="flex flex-row justify-center items-center w-72">
                             <Label className="w-full">Stock Universe</Label>
                             <div className="w-full">
-                                <Select>
+                                <Select onValueChange={(value) => setSelectedStockUniverse(value)}>
                                     <SelectTrigger className="w-[100px]">
                                         <SelectValue placeholder="" />
                                     </SelectTrigger>
@@ -187,10 +209,6 @@ export default function CreateScreener() {
                                     
                                 </Select>
                             </div>
-                        </div>
-                        <div className="flex flex-row justify-center items-center w-72">
-                            <Label className="w-full">Stock Universe</Label>
-                            <Input placeholder="Stock Universe" />
                         </div>
                         {screenerRules.map((rule, index) => (
                             handleRuleRowRender(rule, index, () => handleRemoveRuleClick(index))

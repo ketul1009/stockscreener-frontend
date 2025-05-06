@@ -1,5 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
-import { createContext, useContext, ReactNode, useState } from 'react'
+import axiosInstance from '@/lib/axios'
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react'
 import { toast } from 'sonner'
 
 interface AppContextType {
@@ -8,13 +9,29 @@ interface AppContextType {
     showToast: (message: string, type?: 'success' | 'error' | 'info') => void
     theme: 'light' | 'dark'
     toggleTheme: () => void
+    userData: any
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export function AppProvider({ children }: { children: ReactNode }) {
+    const { user } = useAuth();
+    const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false)
     const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+    useEffect(() => {
+        if (user) {
+            setUserData(user);
+        }else{
+            getUserData();
+        }
+    }, [user]);
+
+    const getUserData = async () => {
+        const response = await axiosInstance.get('/me');
+        setUserData(response.data);
+    }
 
     const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
         switch (type) {
@@ -41,7 +58,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLoading: setIsLoading,
         showToast,
         theme,
-        toggleTheme
+        toggleTheme,
+        userData
     }
 
     return (
