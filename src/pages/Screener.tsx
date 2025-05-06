@@ -4,6 +4,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import SuggestedCard from "@/components/ui/SuggestedCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowRight, Pencil, Plus, Trash } from "lucide-react";
+import { useApp } from "@/contexts/AppContext";
+import { useEffect, useState } from "react";
+import axiosInstance from "@/lib/axios";
+
 
 const screener = [
     {
@@ -54,6 +58,58 @@ const suggestedScreener = [{
 ]
 
 export default function Screener() {
+
+    const { userData } = useApp();
+    const [screeners, setScreeners] = useState<any[]>([]);
+
+    const fetchScreeners = async () => {
+        await axiosInstance.get('/screeners', {
+            params: {
+                username: userData.username
+            }
+        }).then((res) => {
+            if (res.status === 200) {
+                console.log("res.data: ", res.data);
+                setScreeners(res.data);
+            }
+        }).catch((err) => {
+            console.log("err: ", err);
+        });
+    }
+
+    const getRuleCondition = (condition: string) => {
+        if (condition === "greater_than") {
+            return ">";
+        } else if (condition === "less_than") {
+            return "<";
+        } else if (condition === "equal_to") {
+            return "=";
+        } else if (condition === "not_equal_to") {
+            return "!=";
+        }
+    }
+
+    const formatScreenerRules = (rules: any) => {
+        let formattedRules = [];
+        for (let i = 0; i < rules.length; i++) {
+            let ruleString = "";
+            const rule = rules[i];
+            if (rule.type === "filter") {
+                ruleString += `${rule.technicalIndicator} ${getRuleCondition(rule.condition)} ${rule.comparisonValue}`;
+            } else if (rule.type === "condition") {
+                ruleString += `${rule.condition} `;
+            }
+            formattedRules.push(ruleString);
+        }
+        return formattedRules;
+    }
+
+    useEffect(() => {
+        if (userData && screeners.length === 0) {
+            fetchScreeners();
+        }
+    }, [userData]);
+
     return (
         <div>
             <NavigationBar />
@@ -78,14 +134,14 @@ export default function Screener() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {screener.map((screener) => (
+                                {screeners.map((screener: any) => (
                                     <TableRow key={screener.id}>
                                         <TableCell>{screener.name}</TableCell>
                                         <TableCell>{screener.description}</TableCell>
                                         <TableCell>
-                                            <div className="flex flex-row gap-2">
-                                                {screener.filters.map((filter) => (
-                                                    <div key={filter.id}>{filter.name}</div>
+                                            <div className="flex flex-col gap-1">
+                                                {formatScreenerRules(screener.rules).map((rule: any) => (
+                                                    <div key={rule.id}>{rule}</div>
                                                 ))}
                                             </div>
                                         </TableCell>
