@@ -102,9 +102,32 @@ export default function CreateScreener() {
         });
     }
 
+    const updateScreener = async () => {
+        const screener = {
+            id: parseInt(id || "0"),
+            name: screenerName,
+            username: context.userData.username,
+            stock_universe: selectedStockUniverse,
+            rules: screenerRules
+        }
+        await axiosInstance.put(`/screeners/${id}`, screener).then((res) => {
+            if (res.status === 200) {
+                context.showToast("Screener updated successfully", "success");
+            } else {
+                context.showToast("Failed to update screener", "error");
+            }
+        }).catch((err) => {
+            context.showToast(`Failed to update screener: ${err.response.data.error}`, "error");
+        });
+    }
+
     const handleSaveScreenerClick = () => {
         if (validateScreenerRules()) {
-            saveScreener();
+            if (id) {
+                updateScreener();
+            } else {
+                saveScreener();
+            }
         } else {
             context.showToast("Please add at least one rule and make sure the last rule is a filter", "error");
         }
