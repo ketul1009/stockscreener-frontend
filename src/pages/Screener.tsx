@@ -2,43 +2,12 @@ import { NavigationBar } from "@/components/NavigationBar";
 import { Button } from "@/components/ui/button";
 import SuggestedCard from "@/components/ui/SuggestedCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Plus, Trash } from "lucide-react";
+import { Delete, Pencil, Plus, Trash } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { useNavigate } from "react-router-dom";
-
-const screener = [
-    {
-        id: 1,
-        name: "Screener 1",
-        description: "Screener 1 description",
-        filters: [
-            {
-                id: 1,
-                name: "Filter 1",
-                description: "Filter 1 description"
-            },
-            {
-                id: 2,
-                name: "Filter 2",
-                description: "Filter 2 description"
-            }
-        ]
-    },
-    {
-        id: 2,
-        name: "Screener 2",
-        description: "Screener 2 description",
-        filters: [
-            {
-                id: 1,
-                name: "Filter 1",
-                description: "Filter 1 description"
-            }
-        ]
-    }
-]
+import BaseActionModal from "@/components/Modals";
 
 const suggestedScreener = [{
         title: "Suggested Screener",
@@ -58,9 +27,12 @@ const suggestedScreener = [{
 
 export default function Screener() {
 
-    const { userData } = useApp();
+    const { getUserData } = useApp();
+    const [userData, setUserData] = useState<any>(null);
     const [screeners, setScreeners] = useState<any[]>([]);
     const navigate = useNavigate();
+    const context = useApp();
+
     const fetchScreeners = async () => {
         await axiosInstance.get('/screeners', {
             params: {
@@ -68,7 +40,6 @@ export default function Screener() {
             }
         }).then((res) => {
             if (res.status === 200) {
-                console.log("res.data: ", res.data);
                 setScreeners(res.data);
             }
         }).catch((err) => {
@@ -103,11 +74,56 @@ export default function Screener() {
         return formattedRules;
     }
 
+    const handleDeleteScreener = async (id: number) => {
+        await axiosInstance.delete(`/screeners`, {
+            params: {
+                id: id
+            }
+        }).then((res) => {
+            if (res.status === 200) {
+                context.showToast("Screener deleted successfully", "success");
+                context.hideModal();
+                fetchScreeners();
+            } else {
+                context.showToast("Error deleting screener", "error");
+            }
+        }).catch((err) => {
+            context.showToast("Error deleting screener", "error");
+        });
+    }
+
+    const showDeleteScreenerModal = (id: number) => {
+        context.showModal(
+            "Delete Screener", 
+            "Are you sure you want to delete this screener?", 
+            {
+                onClick: () => {
+                    handleDeleteScreener(id);
+                },
+                text: "Delete",
+                variant: "default"
+            },
+            {
+                onClick: () => {
+                    context.hideModal();
+                },
+                text: "Cancel",
+                variant: "outline"
+            }
+        )
+    }
+
     useEffect(() => {
         if (userData && screeners.length === 0) {
             fetchScreeners();
         }
     }, [userData]);
+
+    useEffect(() => {
+        getUserData().then((userData) => {
+            setUserData(userData);
+        });
+    }, []);
 
     return (
         <div>
@@ -150,7 +166,12 @@ export default function Screener() {
                                             }}>
                                                 <Pencil />
                                             </Button>
-                                            <Button variant="outline">
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => {
+                                                    showDeleteScreenerModal(screener.id);
+                                                }}
+                                            >
                                                 <Trash />
                                             </Button>
                                         </TableCell>
@@ -207,3 +228,4 @@ export default function Screener() {
         </div>
     )
 }
+

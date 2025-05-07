@@ -1,4 +1,7 @@
-import { useAuth } from '@/hooks/useAuth'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ActionButton } from '@/constants/constants'
+import ModalButton from '@/components/ModalButton'
 import axiosInstance from '@/lib/axios'
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react'
 import { toast } from 'sonner'
@@ -9,28 +12,25 @@ interface AppContextType {
     showToast: (message: string, type?: 'success' | 'error' | 'info') => void
     theme: 'light' | 'dark'
     toggleTheme: () => void
-    userData: any
+    getUserData: () => Promise<any>
+    showModal: (title: string, description?: string, actionButton?: ActionButton, secondaryButton?: ActionButton) => void
+    hideModal: () => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export function AppProvider({ children }: { children: ReactNode }) {
-    const { user } = useAuth();
-    const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false)
     const [theme, setTheme] = useState<'light' | 'dark'>('light')
+    const [modal, setModal] = useState<ReactNode | null>(null)
 
     useEffect(() => {
-        if (user) {
-            setUserData(user);
-        }else{
-            getUserData();
-        }
-    }, [user]);
+        console.log("modal: ", modal)
+    }, [modal])
 
     const getUserData = async () => {
         const response = await axiosInstance.get('/me');
-        setUserData(response.data);
+        return response.data;
     }
 
     const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -47,6 +47,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
     }
 
+    const showModal = (title: string, description?: string, actionButton?: ActionButton, secondaryButton?: ActionButton) => {
+        setModal(
+            <Dialog open={true} onOpenChange={() => {setModal(null)}}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{title}</DialogTitle>
+                        <DialogDescription>
+                            {description}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        {actionButton && <ModalButton 
+                            onClick={actionButton.onClick} 
+                            variant={actionButton.variant}
+                            text={actionButton.text}
+                            disabled={actionButton.disabled}
+                            loading={actionButton.loading}
+                            type={actionButton.type}
+                            size={actionButton.size} />}
+                        {secondaryButton && <ModalButton
+                            onClick={secondaryButton.onClick} 
+                            variant={secondaryButton.variant}
+                            text={secondaryButton.text}
+                            disabled={secondaryButton.disabled}
+                            loading={secondaryButton.loading}
+                            type={secondaryButton.type}
+                            size={secondaryButton.size} />}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )
+    }
+
+    const hideModal = () => {
+        setModal(null)
+    }
+
     const toggleTheme = () => {
         const newTheme = theme === 'light' ? 'dark' : 'light'
         setTheme(newTheme)
@@ -59,12 +96,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         showToast,
         theme,
         toggleTheme,
-        userData
+        getUserData,
+        showModal,
+        hideModal
     }
 
     return (
         <AppContext.Provider value={value}>
-            {children}
+            <>
+                {children}
+                {modal}
+            </>
         </AppContext.Provider>
     )
 }
