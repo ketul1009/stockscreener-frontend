@@ -134,7 +134,9 @@ export default function Screener() {
                         <div className="font-stretch-extra-condensed uppercase text-gray-500 text-3xl my-4">
                             Saved Screeners
                         </div>
-                        <Button variant="outline" className="shadow-md">
+                        <Button variant="outline" className="shadow-md" onClick={() => {
+                            navigate("/create-screener");
+                        }}>
                             <Plus />
                         </Button>
                     </div>
@@ -148,8 +150,21 @@ export default function Screener() {
                                     <TableHead className="text-gray-500 font-semibold"></TableHead>
                                 </TableRow>
                             </TableHeader>
+                            {(!screeners || screeners.length === 0) && (
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell 
+                                            colSpan={4} 
+                                            className="text-center" 
+                                            style={{ color: "#64748b", fontSize: "1.2rem" }}
+                                        >
+                                            No screeners found
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            )}
                             <TableBody>
-                                {screeners.map((screener: any) => (
+                                {screeners?.map((screener: any) => (
                                     <TableRow key={screener.id}>
                                         <TableCell>{screener.name}</TableCell>
                                         <TableCell>{screener.description}</TableCell>
