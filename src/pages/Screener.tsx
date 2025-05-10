@@ -2,12 +2,11 @@ import { NavigationBar } from "@/components/NavigationBar";
 import { Button } from "@/components/ui/button";
 import SuggestedCard from "@/components/ui/SuggestedCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Delete, Pencil, Plus, Trash } from "lucide-react";
+import { Pencil, Plus, Trash } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useEffect, useState } from "react";
 import axiosInstance from "@/lib/axios";
 import { useNavigate } from "react-router-dom";
-import BaseActionModal from "@/components/Modals";
 
 const suggestedScreener = [{
         title: "Suggested Screener",
@@ -27,8 +26,7 @@ const suggestedScreener = [{
 
 export default function Screener() {
 
-    const { getUserData } = useApp();
-    const [userData, setUserData] = useState<any>(null);
+    const { userData } = useApp(); 
     const [screeners, setScreeners] = useState<any[]>([]);
     const navigate = useNavigate();
     const context = useApp();
@@ -118,12 +116,6 @@ export default function Screener() {
             fetchScreeners();
         }
     }, [userData]);
-
-    useEffect(() => {
-        getUserData().then((userData) => {
-            setUserData(userData);
-        });
-    }, []);
 
     return (
         <div>

@@ -5,6 +5,8 @@ import ModalButton from '@/components/ModalButton'
 import axiosInstance from '@/lib/axios'
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 
 interface AppContextType {
     isLoading: boolean
@@ -15,6 +17,7 @@ interface AppContextType {
     getUserData: () => Promise<any>
     showModal: (title: string, description?: string, actionButton?: ActionButton, secondaryButton?: ActionButton) => void
     hideModal: () => void
+    userData: any
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -23,14 +26,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(false)
     const [theme, setTheme] = useState<'light' | 'dark'>('light')
     const [modal, setModal] = useState<ReactNode | null>(null)
+    const [userData, setUserData] = useState<any>(null)
+    const { isAuthenticated } = useAuth()
 
     useEffect(() => {
-        console.log("modal: ", modal)
-    }, [modal])
+        getUserData();
+    }, []);
 
     const getUserData = async () => {
-        const response = await axiosInstance.get('/me');
-        return response.data;
+        if (!isAuthenticated) {
+            return;
+        }
+        await axiosInstance.get('/me')
+        .then((res) => {
+            setUserData(res.data);
+        })
+        .catch((err) => {
+            console.log(err);
+        })
     }
 
     const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -98,7 +111,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toggleTheme,
         getUserData,
         showModal,
-        hideModal
+        hideModal,
+        userData
     }
 
     return (
