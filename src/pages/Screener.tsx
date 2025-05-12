@@ -34,7 +34,7 @@ export default function Screener() {
     const fetchScreeners = async () => {
         await axiosInstance.get('/screeners', {
             params: {
-                username: userData.username
+                username: userData.id
             }
         }).then((res) => {
             if (res.status === 200) {

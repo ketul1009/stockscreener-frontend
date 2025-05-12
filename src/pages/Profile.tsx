@@ -1,7 +1,9 @@
-import { NavigationBar } from "./components/NavigationBar";
-import { Button } from "./components/ui/button";
-import { useApp } from "./contexts/AppContext";
-import { useState } from "react";
+import { NavigationBar } from "../components/NavigationBar";
+import { Button } from "../components/ui/button";
+import { useApp } from "../contexts/AppContext";
+import { useEffect, useState } from "react";
+import axiosInstance from "../lib/axios";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Profile() {
     const [activeTab, setActiveTab] = useState("Account");
@@ -55,11 +57,22 @@ export default function Profile() {
 }
 
 const Account = () => {
-    const { userData } = useApp();
-
+    const { userData, getUserData } = useApp();
+    const { login } = useAuth();
+    const context = useApp();
     const [isEditing, setIsEditing] = useState(false);
+    const [isEdited, setIsEdited] = useState(false);
     const [editedUsername, setEditedUsername] = useState(userData?.username);
     const [editedEmail, setEditedEmail] = useState(userData?.email);
+
+    useEffect(() => {
+        setEditedUsername(userData?.username);
+        setEditedEmail(userData?.email);
+    }, [userData]);
+    
+    useEffect(() => {
+        getUserData();
+    }, [isEdited]);
 
     const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setEditedUsername(e.target.value);  
@@ -69,8 +82,24 @@ const Account = () => {
         setEditedEmail(e.target.value);
     };
 
-    const handleSave = () => {
-        setIsEditing(false);
+    const handleSave = async () => {
+        await axiosInstance.put(`/update-user`, {
+            id: userData?.id,
+            username: editedUsername,
+            email: editedEmail
+        }).then((res) => {
+            if (res.status === 200) {
+                const data = res.data
+                login({ id: data.user.id, email: data.user.email, username: data.user.username }, data.token)
+                setIsEditing(false);
+                setIsEdited(true);
+                context.showToast("Profile updated successfully", "success");
+            } else if (res.status === 409) {
+                context.showToast("Username or email already in use", "error");
+            }
+        }).catch((err) => {
+            context.showToast("Failed to update profile", "error");
+        });
     };
     
     return (
@@ -90,12 +119,12 @@ const Account = () => {
                         onChange={handleEmailChange}
                         className="w-full border border-gray-300 rounded-md p-2"
                     />
-                    <button
+                    <Button
                         onClick={handleSave}
-                        className="bg-primary text-white px-4 py-2 rounded-md"
+                        disabled={editedUsername === userData?.username && editedEmail === userData?.email}
                     >
                         Save
-                    </button>
+                    </Button>
                 </div>
             ) : (
                 <div className="flex flex-col space-y-2">
@@ -104,13 +133,19 @@ const Account = () => {
                     <Button
                         variant="outline"
                         className="w-fit"
-                        onClick={() => setIsEditing(true)}
+                        onClick={() => {
+                            setIsEditing(true);
+                            setIsEdited(false);
+                        }}
                     >
                         Edit
                     </Button>
                     <Button
                         className="bg-primary text-white w-fit"
-                        onClick={() => setIsEditing(true)}
+                        onClick={() => {
+                            setIsEditing(true);
+                            setIsEdited(false);
+                        }}
                     >
                         Forgot Password
                     </Button>

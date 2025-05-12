@@ -8,7 +8,7 @@ import CreateScreener from "@/pages/CreateScreener"
 import Watchlist from "@/pages/Watchlist"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { AppProvider } from "@/contexts/AppContext"
-import Profile from "./Profile"
+import Profile from "./pages/Profile"
 function App() {
   return (
     <AppProvider>
