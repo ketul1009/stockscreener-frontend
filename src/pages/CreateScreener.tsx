@@ -86,7 +86,7 @@ export default function CreateScreener() {
 
     const saveScreener = async () => {
         const screener = {
-            username: context.userData.username,
+            user_id: context.userData.id,
             name: screenerName,
             stockUniverse: selectedStockUniverse,
             rules: screenerRules
@@ -106,7 +106,7 @@ export default function CreateScreener() {
         const screener = {
             id: parseInt(id || "0"),
             name: screenerName,
-            username: context.userData.username,
+            user_id: context.userData.id,
             stock_universe: selectedStockUniverse,
             rules: screenerRules
         }
