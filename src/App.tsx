@@ -9,6 +9,7 @@ import Watchlist from "@/pages/Watchlist"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { AppProvider } from "@/contexts/AppContext"
 import Profile from "./pages/Profile"
+import ViewScreener from "./pages/ViewScreener"
 function App() {
   return (
     <AppProvider>
@@ -69,6 +70,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/view-screener/:id" 
+            element={
+              <ProtectedRoute>
+                <ViewScreener />
               </ProtectedRoute>
             } 
           />

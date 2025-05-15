@@ -157,7 +157,9 @@ export default function Screener() {
                             )}
                             <TableBody>
                                 {screeners?.map((screener: any) => (
-                                    <TableRow key={screener.id}>
+                                    <TableRow key={screener.id} className="hover:bg-gray-100 cursor-pointer" onClick={() => {
+                                        navigate(`/view-screener/${screener.id}`);
+                                    }}>
                                         <TableCell>{screener.name}</TableCell>
                                         <TableCell>{screener.description}</TableCell>
                                         <TableCell>
