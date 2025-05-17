@@ -6,6 +6,7 @@ import { NavigationBar } from "@/components/NavigationBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { capitalize, roundToPlaces } from "@/utils/utils";
 
 
 const stockData = [
@@ -43,13 +44,65 @@ export default function ViewScreener() {
     const navigate = useNavigate();
     const { userData } = useApp();
     const [jobId, setJobId] = useState<string | null>(null);
+    const [jobStatus, setJobStatus] = useState<string | null>(null);
     const context = useApp();
+    const [results, setResults] = useState<any>(null);
 
     useEffect(() => {
-            axiosInstance.get(`/screeners`, {
-                params: {
-                    id: id
+        getScreenerData();
+        getJobId();
+    }, []);
+
+    useEffect(() => {
+        if (!jobId) return;
+
+        if (jobStatus === "running") {
+            let pollInterval: NodeJS.Timeout;
+            
+            const pollJobStatus = () => {
+                axiosInstance.get(`/jobs/result`, {
+                    params: {
+                        job_id: jobId
+                    }
+                }).then((res) => {
+                    if (res.status === 200) {
+                        setJobStatus(res.data.job_status);
+                        if (res.data.job_status === "completed" || res.data.job_status === "failed") {
+                            context.showToast(`Screener ${capitalize(res.data.job_status)}`, "success");
+                            setResults(JSON.parse(res.data.result));
+                            clearInterval(pollInterval);
+                        }
+                    }
+                }).catch((err) => {
+                    context.showToast("Error getting job status", "error");
+                    clearInterval(pollInterval);
+                });
+            };
+
+            // Initial poll
+            pollJobStatus();
+            
+            // Set up interval
+            pollInterval = setInterval(pollJobStatus, 1500);
+
+            // Cleanup function to clear interval when component unmounts or jobId changes
+            return () => {
+                if (pollInterval) {
+                    clearInterval(pollInterval);
                 }
+            };
+        }
+
+        else {
+            getResults();
+        }
+    }, [jobId, jobStatus]);
+
+    const getScreenerData = () => {
+        axiosInstance.get(`/screeners`, {
+            params: {
+                id: id
+            }
         }).then((res) => {
             if (res.status === 200) {
                 console.log("res: ", res.data);
@@ -57,18 +110,49 @@ export default function ViewScreener() {
                 setLoading(false);
             }
         }).catch((err) => {
-                console.log("err: ", err);
-                setLoading(false);
-            });
-    }, []);
+            console.log("err: ", err);
+            setLoading(false);
+        });
+    }
+
+    const getJobId = () => {
+        axiosInstance.get(`/jobs`, {
+            params: {
+                user_id: userData?.id
+            }
+        }).then((res) => {
+            if (res.status === 200) {
+                console.log("res: ", res.data);
+                setJobId(res.data.job_id);
+                setJobStatus(res.data.job_status);
+            }
+        }).catch((err) => {
+            context.showToast("Error getting job status", "error");
+        });
+    }
+
+    const getResults = () => {
+        axiosInstance.get(`/jobs/result`, {
+            params: {
+                job_id: jobId
+            }
+        }).then((res) => {
+            if (res.status === 200) {
+                setResults(JSON.parse(res.data.result));
+            }
+        }).catch((err) => {
+            context.showToast("Error getting results", "error");
+        });
+    }
 
     const handleRunScreener = () => {
         if (userData) {
             axiosInstance.post('/jobs', {
                 rules: screener.rules,
-                username: userData.username
+                user_id: userData.id
             }).then((res) => {
                 setJobId(res.data.job_id);
+                setJobStatus("running");
                 context.showToast("Screener running", "success");
             }).catch((err) => {
                 context.showToast("Error running screener", "error");
@@ -111,8 +195,8 @@ export default function ViewScreener() {
                     </div>
                     <div className="flex flex-row outline outline-gray-300 rounded-lg mx-10 my-10">
                         <div className="flex flex-col items-center mx-10 my-10 w-1/5">
-                            <Button variant="outline" onClick={handleRunScreener}>
-                                <h1>Run Screener</h1>
+                            <Button variant="outline" onClick={handleRunScreener} disabled={jobStatus === "running" || jobStatus === "pending"}>
+                                <h1>{jobStatus === "running" ? "Running" : "Run Screener"}</h1>
                             </Button>
                         </div>
                         <div className="flex flex-col items-center mx-10 my-10 w-4/5">
@@ -127,19 +211,25 @@ export default function ViewScreener() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {stockData.map((stock) => (
+                                    {results?.length > 0 ? (
+                                        results.map((stock: any) => (
+                                            <TableRow key={stock.symbol}>
+                                                <TableCell className="text-center">{stock.symbol}</TableCell>
+                                                <TableCell className="text-center">{roundToPlaces(stock.close)}</TableCell>
+                                                <TableCell className="text-center">{roundToPlaces(stock.change)}</TableCell>
+                                                <TableCell className="text-center">{roundToPlaces(stock.volume)}</TableCell>
+                                                <TableCell className="text-center">
+                                                    <Button variant="link" className="text-blue-500">
+                                                        Add to Watchlist
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
                                         <TableRow>
-                                            <TableCell className="text-center">{stock.stock}</TableCell>
-                                            <TableCell className="text-center">{stock.price}</TableCell>
-                                            <TableCell className="text-center">{stock.change}</TableCell>
-                                            <TableCell className="text-center">{stock.volume}</TableCell>
-                                            <TableCell className="text-center">
-                                                <Button variant="link" className="text-blue-500">
-                                                    Add to Watchlist
-                                                </Button>
-                                            </TableCell>
+                                            <TableCell colSpan={5} className="text-center">No results found</TableCell>
                                         </TableRow>
-                                    ))}
+                                    )}
                                 </TableBody>
                             </Table>
                         </div>
