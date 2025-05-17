@@ -1,3 +1,5 @@
+import indicators from "./indicators.json";
+
 export const BASE_URL = "http://localhost:8080";
 
 export const API_KEY = "your_api_key_here";
@@ -23,20 +25,10 @@ export const STOCK_UNIVERSE = [
     }
 ]
 
-const technicalIndicators = [
-    {
-        value: "rsi",
-        label: "RSI"
-    },
-    {
-        value: "macd",
-        label: "MACD"
-    },
-    {
-        value: "bollinger_bands",
-        label: "Bollinger Bands"
-    }
-]
+const technicalIndicators = indicators.indicators.map((indicator) => ({
+    value: indicator.value,
+    label: indicator.label
+}));
 
 const ruleConditions = [
     {
