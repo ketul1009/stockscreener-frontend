@@ -140,32 +140,6 @@ export default function ViewScreener() {
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                    {stockData.map((stock) => (
-                                        <TableRow>
-                                            <TableCell>{stock.stock}</TableCell>
-                                            <TableCell>{stock.price}</TableCell>
-                                            <TableCell>{stock.change}</TableCell>
-                                            <TableCell>{stock.volume}</TableCell>
-                                            <TableCell>
-                                                <Button variant="link" className="text-blue-500">
-                                                    Add to Watchlist
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {stockData.map((stock) => (
-                                        <TableRow>
-                                            <TableCell>{stock.stock}</TableCell>
-                                            <TableCell>{stock.price}</TableCell>
-                                            <TableCell>{stock.change}</TableCell>
-                                            <TableCell>{stock.volume}</TableCell>
-                                            <TableCell>
-                                                <Button variant="link" className="text-blue-500">
-                                                    Add to Watchlist
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
                                 </TableBody>
                             </Table>
                         </div>
