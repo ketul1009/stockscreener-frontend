@@ -61,33 +61,6 @@ export default function Watchlist() {
         }
     }
 
-    const handleStockDelete = async (index: number) => {
-        if (!selectedWatchlistIndex) return;
-        if (!watchlists[selectedWatchlistIndex]) return;
-
-        const newWatchlistData = watchlists[selectedWatchlistIndex].stock_list.filter((stock:any, i:number) => i !== index);
-
-        axiosInstance.put(`/watchlists/update?id=${watchlists[selectedWatchlistIndex].id}`, {
-            id: watchlists[selectedWatchlistIndex].id,
-            name: watchlists[selectedWatchlistIndex].name,
-            user_id: userData?.id,
-            stock_list: newWatchlistData
-        }).then((res) => {
-            context.showToast("Stock removed from watchlist", "success");
-            setWatchlistData(newWatchlistData);
-        }).catch((err) => {
-            context.showToast("Error removing from watchlist", "error");
-        })
-    }
-
-    const deleteStockFromWatchlist = (index: number) => {
-        if (!selectedWatchlistIndex) return;
-        if (!watchlists[selectedWatchlistIndex]) return;
-
-        const newWatchlistData = watchlists[selectedWatchlistIndex].stock_list.filter((s: any, i: number) => i !== index);
-        setWatchlistData(newWatchlistData);
-    }
-
     const handleWatchlistCreate = async () => {
         if (!userData) return;
         const newWatchlistBody = {
@@ -110,6 +83,26 @@ export default function Watchlist() {
     const handleWatchlistChange = (index: number) => {
         setSelectedWatchlistIndex(index);
         getWatchlistData(watchlists[index].id);
+    }
+
+    const handleWatchlistStockDelete = async (stockData: any) => {
+        console.log(stockData, selectedWatchlistIndex, watchlists);
+        if (selectedWatchlistIndex === null) return;
+        if (!watchlists[selectedWatchlistIndex]) return;
+
+
+        console.log("watchlists[selectedWatchlistIndex]",watchlists[selectedWatchlistIndex]);
+        await axiosInstance.put(`/watchlists/update?id=${watchlists[selectedWatchlistIndex].id}`, {
+            id: watchlists[selectedWatchlistIndex].id,
+            name: watchlists[selectedWatchlistIndex].name,
+            user_id: userData?.id,
+            stock_list: stockData
+        }).then((res) => {
+            context.showToast("Stock removed from watchlist", "success");
+            setWatchlistData(stockData);
+        }).catch((err) => {
+            context.showToast("Error removing from watchlist", "error");
+        })
     }
 
     const getWatchlistData = async (watchlistId: number) => {
@@ -136,7 +129,12 @@ export default function Watchlist() {
                 />
                 {watchlists?.length > 0 && <WatchlistDataTable 
                     watchlistData={watchlistData}
-                    onDelete={(index: number) => deleteStockFromWatchlist(index)}
+                    onSave={(data: any[])=>{
+                        handleWatchlistStockDelete(data);
+                    }}
+                    onSaveCallback={()=>{
+                        getWatchlists();
+                    }}
                 />}
                 <BaseDialog 
                     open={openDialog}
@@ -159,16 +157,19 @@ export default function Watchlist() {
     )
 }
 
-const WatchlistDataTable = ({watchlistData, onDelete}: {watchlistData: any[], onDelete: (index: number) => void}) => {
+const WatchlistDataTable = ({watchlistData, onSave, onSaveCallback}: {watchlistData: any[], onSave: (data: any[]) => void, onSaveCallback: () => void}) => {
 
     const [initialData, setInitialData] = useState<any[]>(watchlistData);
-    const [showSaveButton, setShowSaveButton] = useState<boolean>(false);
+    const [currentData, setCurrentData] = useState<any[]>(watchlistData);
 
     useEffect(() => {
-        if (JSON.stringify(watchlistData) !== JSON.stringify(initialData)) {
-            setShowSaveButton(true);
-        }
-    }, [JSON.stringify(watchlistData)]);
+        setCurrentData(watchlistData);
+        setInitialData(watchlistData);
+    }, [watchlistData]);
+
+    const handleDelete = (index: number) => {
+        setCurrentData(currentData.filter((_, i) => i !== index));
+    }
 
     return (
         <div className="flex flex-col">
@@ -183,7 +184,7 @@ const WatchlistDataTable = ({watchlistData, onDelete}: {watchlistData: any[], on
                         <TableHead className="table-header text-center"></TableHead>
                     </TableRow>
                 </TableHeader>
-                {watchlistData.length === 0 && (
+                {currentData.length === 0 && (
                     <TableBody>
                         <TableRow>
                             <TableCell  colSpan={5} className="text-center w-160">No stocks found</TableCell>
@@ -191,14 +192,14 @@ const WatchlistDataTable = ({watchlistData, onDelete}: {watchlistData: any[], on
                     </TableBody>
                 )}
                 <TableBody>
-                    {watchlistData.map((item, index) => (
+                    {currentData.map((item, index) => (
                         <TableRow key={item.symbol} className="hover:bg-gray-100 cursor-pointer">
                             <TableCell className="w-32 text-center">{item.symbol}</TableCell>
                             <TableCell className="w-32 text-center">{roundToPlaces(item.close)}</TableCell>
                             <TableCell className="w-32 text-center">{roundToPlaces(item.change)}</TableCell>
                             <TableCell className="w-32 text-center">{roundToPlaces(item.volume)}</TableCell>
                             <TableCell className="w-32 text-center">
-                                <Button variant="outline" onClick={() => onDelete(index)}>
+                                <Button variant="outline" onClick={() => handleDelete(index)}>
                                     <Trash />
                                 </Button>
                             </TableCell>
@@ -208,13 +209,14 @@ const WatchlistDataTable = ({watchlistData, onDelete}: {watchlistData: any[], on
             </Table>
             </div>
             <div className="flex flex-row justify-end">
-                {showSaveButton && (
+                {JSON.stringify(currentData) !== JSON.stringify(initialData) && (
                     <div className="flex flex-row gap-2">
                         <Button variant="default" onClick={() => {
-                            setShowSaveButton(false);
+                            onSave(currentData);
+                            onSaveCallback();
                         }}>Save</Button>
                         <Button variant="outline" onClick={() => {
-                            setShowSaveButton(false);
+                            setCurrentData(initialData);
                         }}>Cancel</Button>
                     </div>
                 )}
