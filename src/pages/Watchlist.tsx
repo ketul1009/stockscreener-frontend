@@ -6,51 +6,122 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pencil, Trash } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useApp } from "@/contexts/AppContext";
+import axiosInstance from "@/lib/axios";
+import { roundToPlaces } from "@/utils/utils";
 
 export default function Watchlist() {
-    const [watchlist, setWatchlist] = useState<any[]>([]);
+    const [watchlists, setWatchlists] = useState<any[]>([]);
     const [watchlistData, setWatchlistData] = useState<any[]>([]);
     const [openDialog, setOpenDialog] = useState(false);
-    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const [selectedWatchlistIndex, setSelectedWatchlistIndex] = useState<number | null>(null);
     const [watchlistName, setWatchlistName] = useState<string>("");
+    const {userData} = useApp();
+    const context = useApp();
 
     useEffect(() => {
-        setWatchlist(watchlists);
-        setWatchlistData(data);
-    }, []);
+        getWatchlists();
+    }, [userData]);
+
+    const getWatchlists = async () => {
+        if (!userData) return;
+        await axiosInstance.get("/watchlists/all",
+            {
+                params: {
+                    user_id: userData.id
+                }
+            }
+        )
+        .then((res) => {
+            setWatchlists(res.data);
+        })
+        .catch((err) => {
+            context.showToast(err.response.data.message, "error");
+        })
+    }
 
     const handleWatchlistDelete = (index: number) => {
-        setSelectedIndex(index);
+        setSelectedWatchlistIndex(index);
         setOpenDialog(true);
     }
 
-    const confirmDelete = () => {
-        if (selectedIndex !== null) {
-            const newWatchlist = [...watchlist];
-            newWatchlist.splice(selectedIndex, 1);
-            setWatchlist(newWatchlist);
-            setOpenDialog(false);
+    const confirmDelete = async () => {
+        if (selectedWatchlistIndex !== null) {
+            await axiosInstance.delete(`/watchlists`, {
+                params: {
+                    id: watchlists[selectedWatchlistIndex].id
+                }
+            }).then((res) => {
+                setWatchlists(watchlists.filter((_, index) => index !== selectedWatchlistIndex));
+                context.showToast("Watchlist deleted successfully", "success");
+                setOpenDialog(false);
+            }).catch((err) => {
+                context.showToast(err.response.data.message, "error");
+            })
         }
     }
 
-    const handleStockDelete = (index: number) => {
-        const newWatchlistData = [...watchlistData];
-        newWatchlistData.splice(index, 1);
+    const handleStockDelete = async (index: number) => {
+        if (!selectedWatchlistIndex) return;
+        if (!watchlists[selectedWatchlistIndex]) return;
+
+        const newWatchlistData = watchlists[selectedWatchlistIndex].stock_list.filter((stock:any, i:number) => i !== index);
+
+        axiosInstance.put(`/watchlists/update?id=${watchlists[selectedWatchlistIndex].id}`, {
+            id: watchlists[selectedWatchlistIndex].id,
+            name: watchlists[selectedWatchlistIndex].name,
+            user_id: userData?.id,
+            stock_list: newWatchlistData
+        }).then((res) => {
+            context.showToast("Stock removed from watchlist", "success");
+            setWatchlistData(newWatchlistData);
+        }).catch((err) => {
+            context.showToast("Error removing from watchlist", "error");
+        })
+    }
+
+    const deleteStockFromWatchlist = (index: number) => {
+        if (!selectedWatchlistIndex) return;
+        if (!watchlists[selectedWatchlistIndex]) return;
+
+        const newWatchlistData = watchlists[selectedWatchlistIndex].stock_list.filter((s: any, i: number) => i !== index);
         setWatchlistData(newWatchlistData);
     }
 
-    const handleWatchlistCreate = () => {
-        const newWatchlist = {
+    const handleWatchlistCreate = async () => {
+        if (!userData) return;
+        const newWatchlistBody = {
             name: watchlistName,
+            user_id: userData?.id,
             stocks: []
         }
-        setWatchlist([...watchlist, newWatchlist]);
+        await axiosInstance.post("/watchlists", newWatchlistBody).then((res) => {
+            if (watchlists === null || watchlists === undefined || watchlists.length === 0) {
+                setWatchlists([res.data]);
+            } else {
+                setWatchlists([...watchlists, res.data]);
+            }
+            context.showToast("Watchlist created successfully", "success");
+        }).catch((err) => {
+            context.showToast("Failed to create watchlist", "error");
+        })
     }
 
     const handleWatchlistChange = (index: number) => {
-        const newWatchlistData = watchlist[index].data;
-        setWatchlistData(newWatchlistData);
+        setSelectedWatchlistIndex(index);
+        getWatchlistData(watchlists[index].id);
+    }
+
+    const getWatchlistData = async (watchlistId: number) => {
+        await axiosInstance.get(`/watchlists`, {
+            params: {
+                id: watchlistId
+            }
+        }).then((res) => {
+            setWatchlistData(res.data.stock_list ? res.data.stock_list : []);
+        }).catch((err) => {
+            context.showToast(err.response.data.message, "error");
+        })
     }
 
     return (
@@ -58,13 +129,14 @@ export default function Watchlist() {
             <NavigationBar />
             <div className="flex flex-row items-start justify-start h-screen pl-10 pt-10 gap-10">
                 <WatchlistTable 
-                    savedWatchlists={watchlist} 
+                    savedWatchlists={watchlists ?? []} 
                     onDelete={handleWatchlistDelete} 
                     handleWatchlistChange={handleWatchlistChange}
+                    selectedWatchlistIndex={selectedWatchlistIndex}
                 />
-                {watchlist.length > 0 && <WatchlistDataTable 
+                {watchlists?.length > 0 && <WatchlistDataTable 
                     watchlistData={watchlistData}
-                    onDelete={(index: number) => handleStockDelete(index)}
+                    onDelete={(index: number) => deleteStockFromWatchlist(index)}
                 />}
                 <BaseDialog 
                     open={openDialog}
@@ -87,43 +159,27 @@ export default function Watchlist() {
     )
 }
 
-const data = [
-    {
-        name: "Microsoft",
-        symbol: "MSFT",
-        price: 100,
-        change: 10
-    },
-    {
-        name: "Tesla",
-        symbol: "TSLA",
-        price: 100,
-        change: 10
-    },
-    {
-        name: "Amazon",
-        symbol: "AMZN",
-        price: 100,
-        change: 10
-    },
-    {
-        name: "Apple",
-        symbol: "AAPL",
-        price: 100,
-        change: 10
-    },
-]
-
 const WatchlistDataTable = ({watchlistData, onDelete}: {watchlistData: any[], onDelete: (index: number) => void}) => {
+
+    const [initialData, setInitialData] = useState<any[]>(watchlistData);
+    const [showSaveButton, setShowSaveButton] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (JSON.stringify(watchlistData) !== JSON.stringify(initialData)) {
+            setShowSaveButton(true);
+        }
+    }, [JSON.stringify(watchlistData)]);
+
     return (
-        <div className="table-outline">
-            <Table>
-                <TableHeader>
+        <div className="flex flex-col">
+            <div className="table-outline">
+                <Table>
+                    <TableHeader>
                     <TableRow>
-                        <TableHead className="table-header text-center">Name</TableHead>
                         <TableHead className="table-header text-center">Symbol</TableHead>
                         <TableHead className="table-header text-center">Price</TableHead>
                         <TableHead className="table-header text-center">Change</TableHead>
+                        <TableHead className="table-header text-center">Volume</TableHead>
                         <TableHead className="table-header text-center"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -137,10 +193,10 @@ const WatchlistDataTable = ({watchlistData, onDelete}: {watchlistData: any[], on
                 <TableBody>
                     {watchlistData.map((item, index) => (
                         <TableRow key={item.symbol} className="hover:bg-gray-100 cursor-pointer">
-                            <TableCell className="w-32 text-center">{item.name}</TableCell>
                             <TableCell className="w-32 text-center">{item.symbol}</TableCell>
-                            <TableCell className="w-32 text-center">{item.price}</TableCell>
-                            <TableCell className="w-32 text-center">{item.change}</TableCell>
+                            <TableCell className="w-32 text-center">{roundToPlaces(item.close)}</TableCell>
+                            <TableCell className="w-32 text-center">{roundToPlaces(item.change)}</TableCell>
+                            <TableCell className="w-32 text-center">{roundToPlaces(item.volume)}</TableCell>
                             <TableCell className="w-32 text-center">
                                 <Button variant="outline" onClick={() => onDelete(index)}>
                                     <Trash />
@@ -150,26 +206,31 @@ const WatchlistDataTable = ({watchlistData, onDelete}: {watchlistData: any[], on
                     ))}
                 </TableBody>
             </Table>
+            </div>
+            <div className="flex flex-row justify-end">
+                {showSaveButton && (
+                    <div className="flex flex-row gap-2">
+                        <Button variant="default" onClick={() => {
+                            setShowSaveButton(false);
+                        }}>Save</Button>
+                        <Button variant="outline" onClick={() => {
+                            setShowSaveButton(false);
+                        }}>Cancel</Button>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
 
-const watchlists = [
-    {
-        name: "Watchlist 1",
-        stocks: ["AAPL", "GOOG", "MSFT"],
-        id: 1,
-        data: data
-    },
-    {
-        name: "Watchlist 2",
-        stocks: ["AAPL", "GOOG", "MSFT"],
-        id: 2,
-        data: []
-    }
-]
+const WatchlistTable = ({savedWatchlists, onDelete, handleWatchlistChange, selectedWatchlistIndex}: { savedWatchlists: any[], onDelete: (index: number) => void, handleWatchlistChange: (index: number) => void, selectedWatchlistIndex: number | null }) => {
 
-const WatchlistTable = ({savedWatchlists, onDelete, handleWatchlistChange }: { savedWatchlists: any[], onDelete: (index: number) => void, handleWatchlistChange: (index: number) => void }) => {
+    const getSelectedWatchlistClassName = (index: number) => {
+        if (selectedWatchlistIndex === index) {
+            return "w-32 text-center font-bold";
+        }
+        return "w-32 text-center";
+    }
 
     return (
         <div className="table-outline">
@@ -190,12 +251,13 @@ const WatchlistTable = ({savedWatchlists, onDelete, handleWatchlistChange }: { s
                 )}
                 <TableBody>
                     {savedWatchlists.map((watchlist, index) => (
-                        <TableRow key={watchlist.name} onClick={() => handleWatchlistChange(index)}>
-                            <TableCell className="w-32 text-center">{watchlist.name}</TableCell>
-                            <TableCell className="w-32 text-center">{watchlist.stocks.length}</TableCell>
-                            <TableCell className="w-32 text-center">
+                        <TableRow key={watchlist.name} onClick={() => handleWatchlistChange(index)} className="hover:bg-gray-100 cursor-pointer">
+                            <TableCell className={getSelectedWatchlistClassName(index)}>{watchlist.name}</TableCell>
+                            <TableCell className={getSelectedWatchlistClassName(index)}>{watchlist.stock_list ? watchlist.stock_list.length : 0}</TableCell>
+                            <TableCell className={getSelectedWatchlistClassName(index)}>
                                 <Button 
-                                    variant="outline" 
+                                    variant={index === selectedWatchlistIndex ? "default" : "outline"}
+                                    className={index === selectedWatchlistIndex ? "bg-black text-white" : ""}
                                     onClick={(e) => {
                                         onDelete(index)
                                         e.stopPropagation()

@@ -7,35 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { capitalize, roundToPlaces } from "@/utils/utils";
-
-
-const stockData = [
-    {
-        stock: "AAPL",
-        price: 150.75,
-        change: 1.25,
-        volume: 1000000
-    },
-    {
-        stock: "AAPL",
-        price: 150.75,
-        change: 1.25,
-        volume: 1000000
-    },
-    {
-        stock: "AAPL",
-        price: 150.75,
-        change: 1.25,
-        volume: 1000000
-    },
-    {
-        stock: "AAPL",
-        price: 150.75,
-        change: 1.25,
-        volume: 1000000
-    }
-]
-
+import BaseDialog from "@/components/ui/BaseDialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ViewScreener() {
     const { id } = useParams();
@@ -47,10 +20,14 @@ export default function ViewScreener() {
     const [jobStatus, setJobStatus] = useState<string | null>(null);
     const context = useApp();
     const [results, setResults] = useState<any>(null);
+    const [openAddToWatchlistDialog, setOpenAddToWatchlistDialog] = useState(false);
+    const [selectedStock, setSelectedStock] = useState<any>(null);
+    const [watchlists, setWatchlists] = useState<any[]>([]);
 
     useEffect(() => {
         getScreenerData();
         getJobId();
+        getWatchlists();
     }, []);
 
     useEffect(() => {
@@ -160,6 +137,19 @@ export default function ViewScreener() {
         }
     }
 
+    const getWatchlists = () => {
+        if (!userData) return;
+        axiosInstance.get("/watchlists/all", {
+            params: {
+                user_id: userData?.id
+            }
+        }).then((res) => {
+            setWatchlists(res.data);
+        }).catch((err) => {
+            context.showToast("Error getting watchlists", "error");
+        })
+    }
+    
     return (
         <div>
             <NavigationBar />
@@ -219,7 +209,10 @@ export default function ViewScreener() {
                                                 <TableCell className="text-center">{roundToPlaces(stock.change)}</TableCell>
                                                 <TableCell className="text-center">{roundToPlaces(stock.volume)}</TableCell>
                                                 <TableCell className="text-center">
-                                                    <Button variant="link" className="text-blue-500">
+                                                    <Button variant="link" className="text-blue-500" onClick={() => {
+                                                        setSelectedStock(stock);
+                                                        setOpenAddToWatchlistDialog(true);
+                                                    }}>
                                                         Add to Watchlist
                                                     </Button>
                                                 </TableCell>
@@ -232,6 +225,13 @@ export default function ViewScreener() {
                                     )}
                                 </TableBody>
                             </Table>
+                            <AddToWatchlistModal 
+                                openDialog={openAddToWatchlistDialog} 
+                                setOpenDialog={setOpenAddToWatchlistDialog} 
+                                stock={selectedStock} 
+                                watchlists={watchlists}
+                                successCallback={getWatchlists}
+                            />
                         </div>
                     </div>
                 </div>
@@ -273,5 +273,61 @@ function RulesCard(rules: any) {
                 ))}
             </CardContent>
         </Card>
+    )
+}
+
+function AddToWatchlistModal({openDialog, setOpenDialog, stock, watchlists, successCallback}: {openDialog: boolean, setOpenDialog: (open: boolean) => void, stock: any, watchlists: any[], successCallback: () => void}) {
+    const [selectedWatchlist, setSelectedWatchlist] = useState<any>(null);
+    const { userData } = useApp();
+    const context = useApp();
+
+
+    const handleAddToWatchlist = () => {
+        console.log("selectedWatchlist: ", selectedWatchlist);
+        if (!selectedWatchlist) return;
+        axiosInstance.put(`/watchlists/update?id=${selectedWatchlist.id}`, {
+            id: selectedWatchlist.id,
+            name: selectedWatchlist.name,
+            user_id: userData?.id,
+            stock_list: [...selectedWatchlist.stock_list, stock]
+        }).then((res) => {
+            context.showToast("Stock added to watchlist", "success");
+            successCallback();
+        }).catch((err) => {
+            context.showToast("Error adding to watchlist", "error");
+        })
+    }
+    
+    return (
+        <BaseDialog
+            open={openDialog}
+            onOpenChange={setOpenDialog}
+            title="Add to Watchlist"
+            content={
+                <div>
+                    <Select onValueChange={(value) => {
+                        setSelectedWatchlist(watchlists.find((watchlist) => watchlist.name === value));
+                    }}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a watchlist" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {watchlists?.map((watchlist) => (
+                                <SelectItem
+                                    key={watchlist.id}
+                                    value={watchlist.name}
+                                >
+                                    {watchlist.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            }
+            primaryAction={{
+                label: "Add",
+                onClick: handleAddToWatchlist
+            }}
+        />
     )
 }
