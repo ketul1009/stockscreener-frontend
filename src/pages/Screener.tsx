@@ -40,8 +40,8 @@ export default function Screener() {
             if (res.status === 200) {
                 setScreeners(res.data);
             }
-        }).catch((err) => {
-            console.log("err: ", err);
+        }).catch(() => {
+            context.showToast("Error fetching screeners", "error");
         });
     }
 
@@ -85,7 +85,7 @@ export default function Screener() {
             } else {
                 context.showToast("Error deleting screener", "error");
             }
-        }).catch((err) => {
+        }).catch(() => {
             context.showToast("Error deleting screener", "error");
         });
     }

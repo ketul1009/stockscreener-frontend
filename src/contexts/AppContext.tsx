@@ -1,11 +1,9 @@
-import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ActionButton } from '@/constants/constants'
 import ModalButton from '@/components/ModalButton'
 import axiosInstance from '@/lib/axios'
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 
 interface AppContextType {
@@ -41,8 +39,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .then((res) => {
             setUserData(res.data);
         })
-        .catch((err) => {
-            console.log(err);
+        .catch(() => {
+            
         })
     }
 

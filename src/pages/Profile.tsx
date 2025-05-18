@@ -97,7 +97,7 @@ const Account = () => {
             } else if (res.status === 409) {
                 context.showToast("Username or email already in use", "error");
             }
-        }).catch((err) => {
+        }).catch(() => {
             context.showToast("Failed to update profile", "error");
         });
     };

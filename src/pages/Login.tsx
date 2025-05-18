@@ -24,7 +24,7 @@ export default function Login() {
   const handleLogin = async () => {
     if (!validateLogin()) return
     try {
-      const response = await axios.post(`${API_URL}/login`, {
+      await axios.post(`${API_URL}/login`, {
         email,
         password
       }).then(res => {

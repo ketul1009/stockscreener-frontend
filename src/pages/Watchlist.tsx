@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Trash } from "lucide-react";
+import { Trash } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import axiosInstance from "@/lib/axios";
@@ -51,7 +51,7 @@ export default function Watchlist() {
                 params: {
                     id: watchlists[selectedWatchlistIndex].id
                 }
-            }).then((res) => {
+            }).then(() => {
                 setWatchlists(watchlists.filter((_, index) => index !== selectedWatchlistIndex));
                 context.showToast("Watchlist deleted successfully", "success");
                 setOpenDialog(false);
@@ -75,7 +75,7 @@ export default function Watchlist() {
                 setWatchlists([...watchlists, res.data]);
             }
             context.showToast("Watchlist created successfully", "success");
-        }).catch((err) => {
+        }).catch(() => {
             context.showToast("Failed to create watchlist", "error");
         })
     }
@@ -86,21 +86,18 @@ export default function Watchlist() {
     }
 
     const handleWatchlistStockDelete = async (stockData: any) => {
-        console.log(stockData, selectedWatchlistIndex, watchlists);
         if (selectedWatchlistIndex === null) return;
         if (!watchlists[selectedWatchlistIndex]) return;
 
-
-        console.log("watchlists[selectedWatchlistIndex]",watchlists[selectedWatchlistIndex]);
         await axiosInstance.put(`/watchlists/update?id=${watchlists[selectedWatchlistIndex].id}`, {
             id: watchlists[selectedWatchlistIndex].id,
             name: watchlists[selectedWatchlistIndex].name,
             user_id: userData?.id,
             stock_list: stockData
-        }).then((res) => {
+        }).then(() => {
             context.showToast("Stock removed from watchlist", "success");
             setWatchlistData(stockData);
-        }).catch((err) => {
+        }).catch(() => {
             context.showToast("Error removing from watchlist", "error");
         })
     }

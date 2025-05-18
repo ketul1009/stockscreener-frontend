@@ -50,7 +50,7 @@ export default function ViewScreener() {
                             clearInterval(pollInterval);
                         }
                     }
-                }).catch((err) => {
+                }).catch(() => {
                     context.showToast("Error getting job status", "error");
                     clearInterval(pollInterval);
                 });
@@ -82,12 +82,11 @@ export default function ViewScreener() {
             }
         }).then((res) => {
             if (res.status === 200) {
-                console.log("res: ", res.data);
                 setScreener(res.data);
                 setLoading(false);
             }
-        }).catch((err) => {
-            console.log("err: ", err);
+        }).catch(() => {
+            context.showToast("Error getting screener", "error");
             setLoading(false);
         });
     }
@@ -99,11 +98,10 @@ export default function ViewScreener() {
             }
         }).then((res) => {
             if (res.status === 200) {
-                console.log("res: ", res.data);
                 setJobId(res.data.job_id);
                 setJobStatus(res.data.job_status);
             }
-        }).catch((err) => {
+        }).catch(() => {
             context.showToast("Error getting job status", "error");
         });
     }
@@ -117,7 +115,7 @@ export default function ViewScreener() {
             if (res.status === 200) {
                 setResults(JSON.parse(res.data.result));
             }
-        }).catch((err) => {
+        }).catch(() => {
             context.showToast("Error getting results", "error");
         });
     }
@@ -131,7 +129,7 @@ export default function ViewScreener() {
                 setJobId(res.data.job_id);
                 setJobStatus("running");
                 context.showToast("Screener running", "success");
-            }).catch((err) => {
+            }).catch(() => {
                 context.showToast("Error running screener", "error");
             });
         }
@@ -145,7 +143,7 @@ export default function ViewScreener() {
             }
         }).then((res) => {
             setWatchlists(res.data);
-        }).catch((err) => {
+        }).catch(() => {
             context.showToast("Error getting watchlists", "error");
         })
     }
@@ -242,10 +240,6 @@ export default function ViewScreener() {
 
 function RulesCard(rules: any) {
 
-    useEffect(() => {
-        console.log("rules: ", rules);
-    }, [rules]);
-
     const getRuleOperator = (operator: string) => {
         switch (operator) {
             case "greater_than":
@@ -283,7 +277,6 @@ function AddToWatchlistModal({openDialog, setOpenDialog, stock, watchlists, succ
 
 
     const handleAddToWatchlist = () => {
-        console.log("selectedWatchlist: ", selectedWatchlist);
         if (!selectedWatchlist) return;
         axiosInstance.put(`/watchlists/update?id=${selectedWatchlist.id}`, {
             id: selectedWatchlist.id,
@@ -291,9 +284,11 @@ function AddToWatchlistModal({openDialog, setOpenDialog, stock, watchlists, succ
             user_id: userData?.id,
             stock_list: [...selectedWatchlist.stock_list, stock]
         }).then((res) => {
-            context.showToast("Stock added to watchlist", "success");
-            successCallback();
-        }).catch((err) => {
+            if (res.status === 200) {
+                context.showToast("Stock added to watchlist", "success");
+                successCallback();
+            }
+        }).catch(() => {
             context.showToast("Error adding to watchlist", "error");
         })
     }
