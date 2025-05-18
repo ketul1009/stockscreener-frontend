@@ -120,7 +120,7 @@ export default function Watchlist() {
     return (
         <div>
             <NavigationBar />
-            <div className="flex flex-row items-start justify-start h-screen pl-10 pt-10 gap-10">
+            <div className="flex flex-row items-start justify-start h-screen px-10 pt-10 gap-10">
                 <WatchlistTable 
                     savedWatchlists={watchlists ?? []} 
                     onDelete={handleWatchlistDelete} 
