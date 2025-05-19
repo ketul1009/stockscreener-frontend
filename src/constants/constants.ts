@@ -1,5 +1,14 @@
 import indicators from "./indicators.json";
 
+// Log environment variables for debugging
+console.log('Environment variables:', {
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+});
+
+if (!import.meta.env.VITE_API_BASE_URL) {
+    console.warn('VITE_API_BASE_URL is not set in environment variables');
+}
+
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 export const API_KEY = "your_api_key_here";
