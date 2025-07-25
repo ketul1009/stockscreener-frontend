@@ -1,10 +1,21 @@
 import { NavigationBar } from "@/components/NavigationBar";
 import BaseDialog from "@/components/ui/BaseDialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash } from "lucide-react";
+import { 
+    Trash, 
+    Plus, 
+    Eye, 
+    Heart, 
+    TrendingUp, 
+    BarChart3, 
+    ArrowUpRight, 
+    ArrowDownRight,
+    Loader2,
+    AlertCircle
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import axiosInstance from "@/lib/axios";
@@ -16,6 +27,7 @@ export default function Watchlist() {
     const [openDialog, setOpenDialog] = useState(false);
     const [selectedWatchlistIndex, setSelectedWatchlistIndex] = useState<number | null>(null);
     const [watchlistName, setWatchlistName] = useState<string>("");
+    const [isLoading, setIsLoading] = useState(false);
     const {userData} = useApp();
     const context = useApp();
 
@@ -25,6 +37,7 @@ export default function Watchlist() {
 
     const getWatchlists = async () => {
         if (!userData) return;
+        setIsLoading(true);
         await axiosInstance.get("/watchlists/all",
             {
                 params: {
@@ -37,6 +50,9 @@ export default function Watchlist() {
         })
         .catch((err) => {
             context.showToast(err.response.data.message, "error");
+        })
+        .finally(() => {
+            setIsLoading(false);
         })
     }
 
@@ -55,6 +71,8 @@ export default function Watchlist() {
                 setWatchlists(watchlists.filter((_, index) => index !== selectedWatchlistIndex));
                 context.showToast("Watchlist deleted successfully", "success");
                 setOpenDialog(false);
+                setSelectedWatchlistIndex(null);
+                setWatchlistData([]);
             }).catch((err) => {
                 context.showToast(err.response.data.message, "error");
             })
@@ -62,7 +80,8 @@ export default function Watchlist() {
     }
 
     const handleWatchlistCreate = async () => {
-        if (!userData) return;
+        if (!userData || !watchlistName.trim()) return;
+        setIsLoading(true);
         const newWatchlistBody = {
             name: watchlistName,
             user_id: userData?.id,
@@ -75,8 +94,11 @@ export default function Watchlist() {
                 setWatchlists([...watchlists, res.data]);
             }
             context.showToast("Watchlist created successfully", "success");
+            setWatchlistName("");
         }).catch(() => {
             context.showToast("Failed to create watchlist", "error");
+        }).finally(() => {
+            setIsLoading(false);
         })
     }
 
@@ -115,41 +137,278 @@ export default function Watchlist() {
     }
 
     return (
-        <div>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
             <NavigationBar />
-            <div className="flex flex-row items-start justify-start h-screen px-10 pt-10 gap-10">
-                <WatchlistTable 
-                    savedWatchlists={watchlists ?? []} 
-                    onDelete={handleWatchlistDelete} 
-                    handleWatchlistChange={handleWatchlistChange}
-                    selectedWatchlistIndex={selectedWatchlistIndex}
-                />
-                {watchlists?.length > 0 && <WatchlistDataTable 
-                    watchlistData={watchlistData}
-                    onSave={(data: any[])=>{
-                        handleWatchlistStockDelete(data);
-                    }}
-                    onSaveCallback={()=>{
-                        getWatchlists();
-                    }}
-                />}
-                <BaseDialog 
-                    open={openDialog}
-                    onOpenChange={setOpenDialog}
-                    title="Delete Watchlist" 
-                    description="Are you sure you want to delete this watchlist?"
-                    content={<div>This action cannot be undone.</div>}
-                    primaryAction={{
-                        label: "Delete",
-                        onClick: confirmDelete
-                    }}
-                />
-                <AddWatchlistCard 
-                    watchlistName={watchlistName}
-                    setWatchlistName={setWatchlistName}
-                    handleWatchlistCreate={handleWatchlistCreate}
-                />
+            
+            <div className="container mx-auto px-4 py-8">
+                <div className="max-w-7xl mx-auto">
+                    {/* Header Section */}
+                    <div className="text-center mb-8">
+                        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Heart className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                            My Watchlists
+                        </h1>
+                        <p className="text-gray-600 max-w-2xl mx-auto">
+                            Track your favorite stocks and monitor their performance. 
+                            Create multiple watchlists to organize your investments by strategy or sector.
+                        </p>
+                    </div>
+
+                    <div className="grid lg:grid-cols-3 gap-8">
+                        {/* Watchlists Section */}
+                        <div className="lg:col-span-1">
+                            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                                <CardHeader className="pb-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                <Eye className="w-5 h-5 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-xl font-semibold text-gray-900">
+                                                    Watchlists
+                                                </CardTitle>
+                                                <CardDescription>
+                                                    Your stock collections
+                                                </CardDescription>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {isLoading ? (
+                                        <div className="flex items-center justify-center py-8">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        </div>
+                                    ) : watchlists.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <Heart className="w-8 h-8 text-gray-400" />
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                                No Watchlists Found
+                                            </h3>
+                                            <p className="text-gray-600 mb-6">
+                                                Create your first watchlist to start tracking stocks.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {watchlists.map((watchlist, index) => (
+                                                <div
+                                                    key={watchlist.id}
+                                                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                                                        selectedWatchlistIndex === index
+                                                            ? 'border-blue-500 bg-blue-50'
+                                                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                                    }`}
+                                                    onClick={() => handleWatchlistChange(index)}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex-1">
+                                                            <h3 className={`font-semibold ${
+                                                                selectedWatchlistIndex === index ? 'text-blue-900' : 'text-gray-900'
+                                                            }`}>
+                                                                {watchlist.name}
+                                                            </h3>
+                                                            <p className="text-sm text-gray-600">
+                                                                {watchlist.stock_list ? watchlist.stock_list.length : 0} stocks
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleWatchlistDelete(index);
+                                                                }}
+                                                                className="hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+                                                            >
+                                                                <Trash className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Add Watchlist Card */}
+                            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm mt-6">
+                                <CardHeader className="pb-4">
+                                    <CardTitle className="text-lg font-semibold text-gray-900">
+                                        Create New Watchlist
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Add a new watchlist to organize your stocks
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Input 
+                                                placeholder="Enter watchlist name" 
+                                                value={watchlistName} 
+                                                onChange={(e) => setWatchlistName(e.target.value)}
+                                                className="w-full"
+                                                onKeyPress={(e) => {
+                                                    if (e.key === 'Enter' && watchlistName.trim()) {
+                                                        handleWatchlistCreate();
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <Button 
+                                            onClick={handleWatchlistCreate}
+                                            disabled={!watchlistName.trim() || isLoading}
+                                            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                                        >
+                                            {isLoading ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Creating...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Plus className="w-4 h-4 mr-2" />
+                                                    Create Watchlist
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Stocks Section */}
+                        <div className="lg:col-span-2">
+                            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                                <CardHeader className="pb-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                                <TrendingUp className="w-5 h-5 text-green-600" />
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-xl font-semibold text-gray-900">
+                                                    {selectedWatchlistIndex !== null && watchlists[selectedWatchlistIndex] 
+                                                        ? watchlists[selectedWatchlistIndex].name 
+                                                        : "Stocks"
+                                                    }
+                                                </CardTitle>
+                                                <CardDescription>
+                                                    {selectedWatchlistIndex !== null && watchlists[selectedWatchlistIndex]
+                                                        ? `${watchlistData.length} stocks in this watchlist`
+                                                        : "Select a watchlist to view stocks"
+                                                    }
+                                                </CardDescription>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {selectedWatchlistIndex === null ? (
+                                        <div className="text-center py-12">
+                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <BarChart3 className="w-8 h-8 text-gray-400" />
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                                No Watchlist Selected
+                                            </h3>
+                                            <p className="text-gray-600">
+                                                Choose a watchlist from the left to view its stocks.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <WatchlistDataTable 
+                                            watchlistData={watchlistData}
+                                            onSave={(data: any[])=>{
+                                                handleWatchlistStockDelete(data);
+                                            }}
+                                            onSaveCallback={()=>{
+                                                getWatchlists();
+                                            }}
+                                        />
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+
+                    {/* Summary Section */}
+                    {selectedWatchlistIndex !== null && watchlistData.length > 0 && (
+                        <div className="mt-8">
+                            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+                                Watchlist Summary
+                            </h2>
+                            <div className="grid md:grid-cols-3 gap-6">
+                                <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/60 backdrop-blur-sm">
+                                    <CardContent className="p-6 text-center">
+                                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                            <TrendingUp className="w-6 h-6 text-blue-600" />
+                                        </div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Total Stocks</h3>
+                                        <p className="text-2xl font-bold text-blue-600">{watchlistData.length}</p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/60 backdrop-blur-sm">
+                                    <CardContent className="p-6 text-center">
+                                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                            <ArrowUpRight className="w-6 h-6 text-green-600" />
+                                        </div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Gainers</h3>
+                                        <p className="text-2xl font-bold text-green-600">
+                                            {watchlistData.filter((stock: any) => stock.change >= 0).length}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/60 backdrop-blur-sm">
+                                    <CardContent className="p-6 text-center">
+                                        <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                            <ArrowDownRight className="w-6 h-6 text-red-600" />
+                                        </div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Decliners</h3>
+                                        <p className="text-2xl font-bold text-red-600">
+                                            {watchlistData.filter((stock: any) => stock.change < 0).length}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
+
+            <BaseDialog 
+                open={openDialog}
+                onOpenChange={setOpenDialog}
+                title="Delete Watchlist" 
+                description="Are you sure you want to delete this watchlist?"
+                content={
+                    <div className="space-y-4">
+                        <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                            <div className="flex items-center gap-2">
+                                <AlertCircle className="w-5 h-5 text-red-600" />
+                                <p className="text-sm text-red-700 font-medium">This action cannot be undone.</p>
+                            </div>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                            All stocks in this watchlist will be permanently removed.
+                        </p>
+                    </div>
+                }
+                primaryAction={{
+                    label: "Delete Watchlist",
+                    onClick: confirmDelete
+                }}
+            />
         </div>
     )
 }
@@ -168,128 +427,98 @@ const WatchlistDataTable = ({watchlistData, onSave, onSaveCallback}: {watchlistD
         setCurrentData(currentData.filter((_, i) => i !== index));
     }
 
+    const hasChanges = JSON.stringify(currentData) !== JSON.stringify(initialData);
+
     return (
-        <div className="flex flex-col">
-            <div className="table-outline">
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead className="table-header text-center">Symbol</TableHead>
-                        <TableHead className="table-header text-center">Price</TableHead>
-                        <TableHead className="table-header text-center">Change</TableHead>
-                        <TableHead className="table-header text-center">Volume</TableHead>
-                        <TableHead className="table-header text-center"></TableHead>
-                    </TableRow>
-                </TableHeader>
-                {currentData.length === 0 && (
-                    <TableBody>
-                        <TableRow>
-                            <TableCell  colSpan={5} className="text-center w-160">No stocks found</TableCell>
-                        </TableRow>
-                    </TableBody>
-                )}
-                <TableBody>
-                    {currentData.map((item, index) => (
-                        <TableRow key={item.symbol} className="hover:bg-gray-100 cursor-pointer">
-                            <TableCell className="w-32 text-center">{item.symbol}</TableCell>
-                            <TableCell className="w-32 text-center">{roundToPlaces(item.close)}</TableCell>
-                            <TableCell className="w-32 text-center">{roundToPlaces(item.change)}</TableCell>
-                            <TableCell className="w-32 text-center">{roundToPlaces(item.volume)}</TableCell>
-                            <TableCell className="w-32 text-center">
-                                <Button variant="outline" onClick={() => handleDelete(index)}>
-                                    <Trash />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-            </div>
-            <div className="flex flex-row justify-end">
-                {JSON.stringify(currentData) !== JSON.stringify(initialData) && (
-                    <div className="flex flex-row gap-2">
-                        <Button variant="default" onClick={() => {
-                            onSave(currentData);
-                            onSaveCallback();
-                        }}>Save</Button>
-                        <Button variant="outline" onClick={() => {
-                            setCurrentData(initialData);
-                        }}>Cancel</Button>
+        <div className="space-y-4">
+            {currentData.length === 0 && !hasChanges ? (
+                <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <TrendingUp className="w-8 h-8 text-gray-400" />
                     </div>
-                )}
-            </div>
-        </div>
-    )
-}
-
-const WatchlistTable = ({savedWatchlists, onDelete, handleWatchlistChange, selectedWatchlistIndex}: { savedWatchlists: any[], onDelete: (index: number) => void, handleWatchlistChange: (index: number) => void, selectedWatchlistIndex: number | null }) => {
-
-    const getSelectedWatchlistClassName = (index: number) => {
-        if (selectedWatchlistIndex === index) {
-            return "w-32 text-center font-bold";
-        }
-        return "w-32 text-center";
-    }
-
-    return (
-        <div className="table-outline">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="table-header text-center">Name</TableHead>
-                        <TableHead className="table-header text-center">Stocks</TableHead>
-                        <TableHead className="table-header text-center"></TableHead>
-                    </TableRow>
-                </TableHeader>
-                {savedWatchlists.length === 0 && (
-                    <TableBody>
-                        <TableRow>
-                            <TableCell colSpan={4} className="text-center w-96">No watchlists found</TableCell>
-                        </TableRow>
-                    </TableBody>
-                )}
-                <TableBody>
-                    {savedWatchlists.map((watchlist, index) => (
-                        <TableRow key={watchlist.name} onClick={() => handleWatchlistChange(index)} className="hover:bg-gray-100 cursor-pointer">
-                            <TableCell className={getSelectedWatchlistClassName(index)}>{watchlist.name}</TableCell>
-                            <TableCell className={getSelectedWatchlistClassName(index)}>{watchlist.stock_list ? watchlist.stock_list.length : 0}</TableCell>
-                            <TableCell className={getSelectedWatchlistClassName(index)}>
-                                <Button 
-                                    variant={index === selectedWatchlistIndex ? "default" : "outline"}
-                                    className={index === selectedWatchlistIndex ? "bg-black text-white" : ""}
-                                    onClick={(e) => {
-                                        onDelete(index)
-                                        e.stopPropagation()
-                                    }}
-                                >
-                                    <Trash />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
-    )
-}
-
-const AddWatchlistCard = ({watchlistName, setWatchlistName, handleWatchlistCreate}: {watchlistName: string, setWatchlistName: (name: string) => void, handleWatchlistCreate: () => void}) => {
-    return (
-        <div className="mt-10">
-            <Card className="w-96">
-                <CardHeader>
-                    <CardTitle>Add Watchlist</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-row gap-2">
-                        <Input placeholder="Watchlist Name" value={watchlistName} onChange={(e) => setWatchlistName(e.target.value)} />
-                        <Button variant="outline" onClick={() => {
-                            handleWatchlistCreate()
-                            setWatchlistName("")
-                        }}>Add</Button>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        No Stocks Found
+                    </h3>
+                    <p className="text-gray-600">
+                        This watchlist is empty. Add stocks from screeners or search results.
+                    </p>
+                </div>
+            ) : (
+                <>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="border-b border-gray-200">
+                                    <TableHead className="text-left font-semibold text-gray-700">Symbol</TableHead>
+                                    <TableHead className="text-right font-semibold text-gray-700">Price</TableHead>
+                                    <TableHead className="text-right font-semibold text-gray-700">Change</TableHead>
+                                    <TableHead className="text-right font-semibold text-gray-700">Volume</TableHead>
+                                    <TableHead className="text-center font-semibold text-gray-700">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {currentData.map((item, index) => (
+                                    <TableRow key={item.symbol} className="hover:bg-gray-50 transition-colors">
+                                        <TableCell className="font-medium text-gray-900">
+                                            {item.symbol}
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium">
+                                            ₹{roundToPlaces(item.close)}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className={`flex items-center justify-end gap-1 ${
+                                                item.change >= 0 ? 'text-green-600' : 'text-red-600'
+                                            }`}>
+                                                {item.change >= 0 ? (
+                                                    <ArrowUpRight className="w-4 h-4" />
+                                                ) : (
+                                                    <ArrowDownRight className="w-4 h-4" />
+                                                )}
+                                                {roundToPlaces(item.change)}%
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right text-gray-600">
+                                            {roundToPlaces(item.volume).toLocaleString()}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                onClick={() => handleDelete(index)}
+                                                className="hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+                                            >
+                                                <Trash className="w-4 h-4" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </div>
-                </CardContent>
-            </Card>
+                    
+                    {hasChanges && (
+                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                            <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                    setCurrentData(initialData);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                onClick={() => {
+                                    onSave(currentData);
+                                    onSaveCallback();
+                                }}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                                Save Changes
+                            </Button>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     )
 }
