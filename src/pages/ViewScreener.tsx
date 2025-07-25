@@ -17,7 +17,6 @@ import {
     BarChart3, 
     Plus, 
     Loader2, 
-    Eye,
     CheckCircle,
     AlertCircle,
     ArrowUpRight,
