@@ -81,7 +81,9 @@ export default function Dashboard() {
                             Quick Access
                         </h2>
                         <div className="grid md:grid-cols-3 gap-6">
-                            <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/60 backdrop-blur-sm">
+                            <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/60 backdrop-blur-sm"
+                                onClick={() => navigate("/market-overview")}
+                            >
                                 <CardContent className="p-6 text-center">
                                     <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                                         <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +95,9 @@ export default function Dashboard() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/60 backdrop-blur-sm">
+                            <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/60 backdrop-blur-sm"
+                                onClick={() => navigate("/profile")}
+                            >
                                 <CardContent className="p-6 text-center">
                                     <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                                         <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,7 +109,9 @@ export default function Dashboard() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/60 backdrop-blur-sm">
+                            <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/60 backdrop-blur-sm"
+                                onClick={() => navigate("/watchlist")}
+                            >
                                 <CardContent className="p-6 text-center">
                                     <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                                         <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
