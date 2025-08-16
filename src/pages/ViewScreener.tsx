@@ -317,7 +317,7 @@ export default function ViewScreener() {
                                                                     {stock.symbol}
                                                                 </TableCell>
                                                                 <TableCell className="text-right font-medium">
-                                                                    ${roundToPlaces(stock.close)}
+                                                                    ₹{roundToPlaces(stock.close)}
                                                                 </TableCell>
                                                                 <TableCell className="text-right">
                                                                     <div className={`flex items-center justify-end gap-1 ${
