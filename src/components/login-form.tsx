@@ -16,6 +16,7 @@ interface LoginFormProps {
   onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   className?: string
+  loading?: boolean
 } 
 
 export function LoginForm({
@@ -61,7 +62,7 @@ export function LoginForm({
                 <Button type="submit" className="w-full"
                   onClick={props.onLoginClick}
                 >
-                  Login
+                  {props?.loading ? "Logging in..." : "Login"}
                 </Button>
                 <Button variant="outline" className="w-full">
                   Login with Google

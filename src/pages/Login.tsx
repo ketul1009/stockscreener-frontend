@@ -11,6 +11,7 @@ export default function Login() {
   const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
   const context = useApp()
 
   const validateLogin = () => {
@@ -23,6 +24,7 @@ export default function Login() {
   
   const handleLogin = async () => {
     if (!validateLogin()) return
+    setLoading(true);
     try {
       await axios.post(`${API_URL}/login`, {
         email,
@@ -31,12 +33,15 @@ export default function Login() {
         const data = res.data
         login({ id: data.user.id, email: data.user.email, username: data.user.username }, data.token)
         navigate('/dashboard')
+        setLoading(false)
       }).catch(err => {
         context.showToast(`Login failed: ${err.response.data.error}`, "error")
+        setLoading(false)
       })
     } catch (error) {
       console.error('Login error:', error)
       context.showToast("Login failed", "error")
+      setLoading(false)
     }
   }
   
@@ -44,6 +49,7 @@ export default function Login() {
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <LoginForm 
+          loading={loading}
           onLoginClick={handleLogin}
           onSignupClick={() => {
             navigate("/signup")

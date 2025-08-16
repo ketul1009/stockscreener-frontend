@@ -17,11 +17,13 @@ interface SignupFormProps {
   onPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onConfirmPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   className?: string
+  loading?: boolean
 }
 
 
 export function SignupForm({
     className,
+    loading,
     ...props
 }: SignupFormProps) {
     return (
@@ -71,8 +73,8 @@ export function SignupForm({
                             />
                         </div>
                         <div className="flex flex-col gap-3">
-                            <Button type="submit" className="w-full" onClick={props.onSignupClick}>
-                                Signup
+                            <Button type="submit" className="w-full" onClick={props.onSignupClick} disabled={loading}>
+                                {loading ? "Signing up..." : "Signup"}
                             </Button>
                         </div>
                     </div>

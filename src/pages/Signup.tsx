@@ -11,6 +11,7 @@ export default function Signup() {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+    const [loading, setLoading] = useState(false)
 
     const validateSignup = () => {
         if (!username || !email || !password || !confirmPassword) {
@@ -22,6 +23,8 @@ export default function Signup() {
 
     const handleSignup = async () => {
         if (!validateSignup()) return
+        setLoading(true)
+        await new Promise(resolve => setTimeout(resolve, 2000));
         await axios.post(`${API_URL}/register`, {
             username,
             email,
@@ -30,7 +33,9 @@ export default function Signup() {
         }).then(() => {
             context.showToast("Signup successful", "success")
             navigate("/dashboard")
+            setLoading(false)
         }).catch((err) => {
+            setLoading(false)
             if (err.response.data.error) {
                 context.showToast("Username or email already in use", "error")
             } else {
@@ -40,6 +45,7 @@ export default function Signup() {
     }
     return (
         <SignupForm 
+            loading={loading}
             onSignupClick={handleSignup}
             onLoginClick={() => {
                 navigate("/")
