@@ -24,7 +24,6 @@ export default function Signup() {
     const handleSignup = async () => {
         if (!validateSignup()) return
         setLoading(true)
-        await new Promise(resolve => setTimeout(resolve, 2000));
         await axios.post(`${API_URL}/register`, {
             username,
             email,
